@@ -691,6 +691,40 @@ const SHOP_LINE={farstead:'Packs, tools, the mule out back — everything a road
 const KXP={wolf:8,deer:2,boar:12,aurochs:30,grouse:2,lynx:14,wolverine:16,sabrecat:45,adder:6,bandit:12,ghul:10,wight:14,shade:16,bearer:60,hare:2,fox:4,elk:6,bear:35,rat:3,
  goat:4,badger:6,goblin:8,skeleton:9,zombie:10,slime:6,cube:18,ooze:8,mold:5,rust:12,troll:40,ogre:35,giant:80,madman:14};
 const ANIMALS=['wolf','deer','boar','hare','fox','elk','bear','goat','badger','aurochs','grouse','lynx','wolverine','sabrecat','adder'];
+/* the ones at the inn who will take your coin and your risks */
+const HIRE_KINDS={
+ blade:{label:'BLADE',cost:175,hp:28,dmg:[1,6,1],reach:42,pace:150,tool:'sword',
+  pal:{coat:'#3a3230',hood:'#4f4238',skin:'#c9a284',cloak:'#2e2a26'},
+  sell:'steel, and the sense to keep it between you and the road',
+  take:'finishes the drink, stands, and checks a sword that has clearly been checked before. "Lead on, then."',
+  trait:'Stands where the trouble is. Hits like a soldier who has been paid before.'},
+ bowhand:{label:'BOWHAND',cost:200,hp:22,dmg:[1,6,2],reach:250,pace:145,tool:'bow',ranged:true,
+  pal:{coat:'#33402f',hood:'#43502f',skin:'#b98d6e',cloak:'#2c3527'},
+  sell:'a bow, and the patience that goes with one',
+  take:'looks at your boots, then at the door, and picks up a bow without being asked twice.',
+  trait:'Keeps her distance and looses from it. Little use in a corridor brawl, deadly across a room.'},
+ shield:{label:'SHIELD',cost:230,hp:44,dmg:[1,4,1],reach:40,pace:120,tool:'axe',guard:true,
+  pal:{coat:'#33333d',hood:'#3f3f4c',skin:'#d4ab8a',cloak:'#2a2a33'},
+  sell:'a big shield and a slow opinion of danger',
+  take:'sighs, stands, and straps on a shield that has stopped a great deal.',
+  trait:'Takes blows meant for you — while near, the worst of what lands is his. Slow, and hard to finish.'},
+};
+const HIRE_NAMES=['ASGER','BRYNA','CULLEN','DAGNY','EIRIK','FREYA','GORM','HELGI','INGA','JORVIK',
+ 'KATLA','LEIF','MARGIT','NJAL','ORVAR','PETRA','ROSKVA','SIGRUN','TORVALD','ULFA','VIGDIS','YRSA'];
+/* three drink at the waypost this season, and the seed decides which */
+function innRoster(){
+  const out=[],kinds=Object.keys(HIRE_KINDS),used={};
+  for(let i=0;i<3;i++){
+    const h=hash2(i*13+5,(G.rx||0)*29+(G.ry||0)*47+3,(G.seed0||G.seed)%1777);
+    const k=kinds[i%kinds.length];
+    let ni=Math.floor(h*HIRE_NAMES.length);
+    while(used[ni])ni=(ni+1)%HIRE_NAMES.length;
+    used[ni]=1;
+    const id='hire_'+(G.rx||0)+'_'+(G.ry||0)+'_'+i;
+    out.push({id,kind:k,name:HIRE_NAMES[ni],...HIRE_KINDS[k]});
+  }
+  return out;
+}
 /* the bestiary — a book written by looking */
 const BEAST_GROUPS=[
  ['OF FIELD AND WOOD',['deer','hare','fox','grouse','goat','elk','badger','boar','aurochs','adder','lynx','wolf','wolverine','bear','sabrecat']],
@@ -4351,7 +4385,7 @@ function drawWorld(now,dt){
   ents.push({y:P.y,f:()=>drawPlayer(c,now)});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
   // arrows
-  for(const a of G.arrows)if(!a.kind){c.save();c.translate(a.x,a.y);c.rotate(Math.atan2(a.vy,a.vx));
+  for(const a of G.arrows)if(!a.kind||a.kind==='hire'){c.save();c.translate(a.x,a.y);c.rotate(Math.atan2(a.vy,a.vx));
     ln(c,-7,0,7,0,1.5,'#c9bfa8');c.fillStyle='#8f8b84';c.beginPath();c.moveTo(7,0);c.lineTo(3.6,-1.6);c.lineTo(3.6,1.6);c.fill();c.restore()}
   drawFishingLine(c,now);
   drawBolts(c);
@@ -4394,8 +4428,9 @@ function playerPack(){const P=G.player;let sc=0; // silhouette score: packL 1, p
   return Math.min(3,sc)}
 function drawHire(c,now){
   const h2=G.hire;if(!h2)return;
+  const K=HIRE_KINDS[h2.kind]||HIRE_KINDS.blade;
   drawHumanoid(c,{x:h2.x,y:h2.y,fx:h2.fx,fy:h2.fy,phase:h2.phase,moving:h2.moving,t:now*.001,hurtT:h2.hurtT,
-    pal:{coat:'#3a3230',hood:'#4f4238',skin:'#c9a284',cloak:'#2e2a26'},ember:false,tool:'sword'});
+    pal:K.pal,ember:false,tool:K.tool,backShield:!!K.guard,quiver:!!K.ranged});
   if(h2.hp<h2.maxhp){
     c.fillStyle='rgba(8,8,10,.6)';c.fillRect(h2.x-12,h2.y-46,24,3);
     c.fillStyle='#c4483a';c.fillRect(h2.x-12,h2.y-46,24*Math.max(0,h2.hp/h2.maxhp),3);
@@ -4672,7 +4707,7 @@ function drawDungeon(now,dt){
   if(G.hire&&!G.hire.dead)ents.push({y:G.hire.y,f:()=>drawHire(c,now)});
   ents.push({y:P.y,f:()=>drawPlayer(c,now)});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
-  for(const a of G.arrows)if(!a.kind){c.save();c.translate(a.x,a.y);c.rotate(Math.atan2(a.vy,a.vx));
+  for(const a of G.arrows)if(!a.kind||a.kind==='hire'){c.save();c.translate(a.x,a.y);c.rotate(Math.atan2(a.vy,a.vx));
     ln(c,-7,0,7,0,1.5,'#c9bfa8');c.restore()}
   drawBolts(c);
   drawWisp(c,now);
@@ -6464,6 +6499,10 @@ function hurtPlayer(dmg,from){
   if(!P.blocking&&Math.random()<clamp(statBonus('agi')*.018,0,.3)){
     P.hurtT=.3;pushFloat(P.x,P.y-34,'DODGE','rgba(157,196,166,.8)');narrate('You are not where it lands.');return}
   let arm=armourTotal();
+  const gh=G.hire;
+  if(gh&&!gh.dead&&hireDef().guard&&dist(gh.x,gh.y,P.x,P.y)<70){
+    arm+=3;narrOnce('guarded',hireName(gh)+' steps across and takes the worst of it on the shield. That is the arrangement.');
+  }
   if(from&&(from.kind==='shade')&&skillLv('frostcraft')>=0)arm+=2;
   let d=Math.max(from&&from.kind==='shade'&&skillLv('frostcraft')>=2?0:1,dmg-arm);
   if(P.blocking&&P.st>1){d=Math.max(0,Math.round(d*.25));P.st-=Math.max(.4,1.2*(1-.05*Math.max(0,skillLv('shieldwork'))));gainSkill('shieldwork',1);Snd.hit()}
@@ -6888,17 +6927,21 @@ function updateArrows(dt){
 }
 
 /* ============ hired steel keeps closer ============ */
-function hireBlade(){
+function hireName(h2){return h2?h2.name.charAt(0)+h2.name.slice(1).toLowerCase():''}
+function hireOne(c){
   const P=G.player;
-  if(G.hire&&!G.hire.dead){narrate('One blade is company. Two is a payroll.');return}
-  if(P.gold<175){narrate('A hundred and seventy-five hires steel for the season. You have '+P.gold+'.');return}
-  P.gold-=175;
-  const nm=GQ_NAMES[Math.floor(Math.random()*GQ_NAMES.length)];
-  G.hire={name:nm,x:P.x-30,y:P.y+16,hp:26,maxhp:26,fx:1,fy:0,phase:0,moving:false,atkT:0,hurtT:0,dead:false};
+  if(G.hire&&!G.hire.dead){narrate('One at your back is company. Two is a payroll.');return}
+  if(G.flags['hdead_'+c.id]){narrate('That one is past hiring. The Reach settled the contract.');return}
+  if(P.gold<c.cost){narrate(c.cost+' coins takes '+hireName(c)+' out of that chair. You have '+P.gold+'.');return}
+  P.gold-=c.cost;
+  G.hire={id:c.id,kind:c.kind,name:c.name,x:P.x-30,y:P.y+16,hp:c.hp,maxhp:c.hp,
+    fx:1,fy:0,phase:0,moving:false,atkT:0,hurtT:0,dead:false};
   closeDialog();Snd.coin();
-  narrate(nm.charAt(0)+nm.slice(1).toLowerCase()+' finishes the drink, stands, and checks a sword that has clearly been checked before. "Lead on, then." Ten percent of found coin is theirs.');
-  deed('Hired '+nm.toLowerCase()+'’s sword at the inn, day '+G.day+'.');
+  narrate(hireName(c)+' '+c.take+' Ten percent of found coin is theirs.');
+  deed('Took '+hireName(c).toLowerCase()+' the '+c.label.toLowerCase()+' on at the inn, day '+G.day+'.');
 }
+function hireBlade(){const r=innRoster().find(c=>!G.flags['hdead_'+c.id]);if(r)hireOne(r)}
+function hireDef(){return HIRE_KINDS[(G.hire&&G.hire.kind)||'blade']}
 function updateHire(dt){
   const h2=G.hire;if(!h2||h2.dead)return;
   const P=G.player;
@@ -6908,11 +6951,20 @@ function updateHire(dt){
   let tgt=null,td=220;
   for(const m of list){if(m.dead||!(m.provoked||m.state==='hunt'||m.state==='lunge'))continue;
     const dd=dist(m.x,m.y,h2.x,h2.y);if(dd<td){td=dd;tgt=m}}
-  const ax=tgt?tgt.x:P.x-(P.fx||1)*40-20,ay=tgt?tgt.y:P.y+18;
+  const K=hireDef();
+  let ax=tgt?tgt.x:P.x-(P.fx||1)*40-20,ay=tgt?tgt.y:P.y+18;
+  if(tgt&&K.ranged){ // the bowhand backs off to where a bow is worth carrying
+    const away=dist(tgt.x,tgt.y,h2.x,h2.y)||1;
+    if(away<120){ax=h2.x+(h2.x-tgt.x)/away*90;ay=h2.y+(h2.y-tgt.y)/away*90}
+    else {ax=h2.x;ay=h2.y}
+  }
+  if(tgt&&K.guard){ // the shield puts himself between you and it
+    ax=(tgt.x+P.x)/2;ay=(tgt.y+P.y)/2;
+  }
   const dd2=dist(h2.x,h2.y,ax,ay)||1;
   if(dist(h2.x,h2.y,P.x,P.y)>820){h2.x=P.x-40;h2.y=P.y+20} // finds you, professionally silent about it
-  if(dd2>(tgt?34:56)){
-    const vx=(ax-h2.x)/dd2,vy=(ay-h2.y)/dd2,sp=tgt?150:Math.min(190,90+dd2*.5);
+  if(dd2>(tgt?(K.ranged?18:34):56)){
+    const vx=(ax-h2.x)/dd2,vy=(ay-h2.y)/dd2,sp=tgt?(K.pace||150):Math.min(190,90+dd2*.5);
     const nx=h2.x+vx*sp*dt,ny=h2.y+vy*sp*dt;
     const pass2=G.mode==='dungeon'
       ?(x2,y2)=>{const D2=G.dungeon,t2x=Math.floor(x2/TILE),t2y=Math.floor(y2/TILE);return t2x>=0&&t2y>=0&&t2x<D2.W&&t2y<D2.H&&!!D2.grid[t2y*D2.W+t2x]}
@@ -6921,18 +6973,27 @@ function updateHire(dt){
     if(pass2(h2.x,ny))h2.y=ny;
     h2.fx=vx;h2.fy=vy;h2.moving=true;h2.phase+=dt*8;
   }else h2.moving=false;
-  if(tgt&&td<42&&h2.atkT<=0){
-    h2.atkT=1.6;
-    hurtMob(tgt,roll(1,6,1));
-    part('spark',tgt.x,tgt.y-8,3,{sp:30,life:.3});
-    if(!tgt.dead&&Math.random()<.35){ // steel answers steel
-      const back=Math.max(1,roll(tgt.dmg[0],tgt.dmg[1],tgt.dmg[2])-1);
+  if(tgt&&td<(K.reach||42)&&h2.atkT<=0){
+    h2.atkT=K.ranged?1.9:1.6;
+    const dm=K.dmg||[1,6,1];
+    if(K.ranged){ // an arrow, from a hand that is paid to keep it
+      const l2=dist(tgt.x,tgt.y,h2.x,h2.y)||1;
+      G.arrows.push({kind:'hire',x:h2.x,y:h2.y-14,vx:(tgt.x-h2.x)/l2*600,vy:(tgt.y-14-(h2.y-14))/l2*600,
+        dmg:Math.max(1,roll(dm[0],dm[1],dm[2])),life:1.2});
+      Snd.bow();
+    }else{
+      hurtMob(tgt,roll(dm[0],dm[1],dm[2]));
+      part('spark',tgt.x,tgt.y-8,3,{sp:30,life:.3});
+    }
+    if(!tgt.dead&&!K.ranged&&Math.random()<(K.guard?.22:.35)){ // steel answers steel
+      const back=Math.max(1,roll(tgt.dmg[0],tgt.dmg[1],tgt.dmg[2])-(K.guard?3:1));
       h2.hp-=back;h2.hurtT=.3;
       pushFloat(h2.x,h2.y-32,back,'#c4483a');
       if(h2.hp<=0){h2.dead=true;
-        const nm2=h2.name.charAt(0)+h2.name.slice(1).toLowerCase();
+        const nm2=hireName(h2);
+        if(h2.id)G.flags['hdead_'+h2.id]=G.day; // that chair at the inn stays empty
         narrate(nm2+' goes down and does not get up. The Reach charges what it charges.');
-        deed(nm2+'’s sword broke for you on day '+G.day+'. The name stays in this ledger.');
+        deed(nm2+' the '+((HIRE_KINDS[h2.kind]||HIRE_KINDS.blade).label.toLowerCase())+' died in your company on day '+G.day+'. The name stays in this ledger.');
         setTimeout(()=>{if(G.hire&&G.hire.dead)G.hire=null},2600);
       }
     }
@@ -8138,6 +8199,24 @@ function tryPick(n){
       [['GO','',closeDialog]]);
   }
 }
+function openRoster(n){
+  const P=G.player,live=innRoster().filter(c=>!G.flags['hdead_'+c.id]);
+  const dead=innRoster().filter(c=>G.flags['hdead_'+c.id]);
+  if(!live.length){dlgSet('Nobody left in here takes that kind of work. You have been hard on the ones who did.',
+    [['GO','',closeDialog]]);return}
+  dlgSet('Three chairs at the back take that kind of work'+(dead.length?', or did once':'')+'. "Coin first. Names after."',[
+    ...live.map(c=>[c.name+' THE '+c.label+' — <span class="cost">'+c.cost+'g</span>','',()=>{
+      dlgSet('“'+c.name.charAt(0)+c.name.slice(1).toLowerCase()+'. I bring '+c.sell+'.” '+c.trait
+        +'<br><br><span class="mono" style="font-size:12px;color:var(--text-label)">VIGOUR '+c.hp
+        +' · STRIKES '+c.dmg[0]+'D'+c.dmg[1]+(c.dmg[2]?'+'+c.dmg[2]:'')+(c.ranged?' AT RANGE':'')
+        +' · TAKES A TENTH OF FOUND COIN</span>',[
+        ['TAKE '+c.name+' ON — '+c.cost+'g','primary',()=>hireOne(c),P.gold<c.cost],
+        ['BACK TO THE ROOM','',()=>openRoster(n)]])}]),
+    ...dead.map(c=>[c.name+' THE '+c.label+' — DIED IN YOUR COMPANY','',()=>{
+      dlgSet('“'+c.name.charAt(0)+c.name.slice(1).toLowerCase()+' does not come in here any more. You were there.” The room finds something else to look at.',
+        [['BACK TO THE ROOM','',()=>openRoster(n)]])},true]),
+    ['NOBODY TONIGHT','',closeDialog]]);
+}
 function dlgRoot(n){
   const P=G.player,F=G.flags;
   if(F['pkmad_'+n.id]===G.day){ // your hand was noticed; the day remembers
@@ -8162,9 +8241,9 @@ function dlgRoot(n){
       ['SEE THE LARDER','primary',()=>openShopScreen(n)],...fav,
       ['A BED — <span class="cost">2g</span>','',()=>{closeDialog();useInn()},P.gold<2],
       (G.hire&&!G.hire.dead)?['PART WAYS WITH '+G.hire.name,'',()=>{
-        narrate(G.hire.name.charAt(0)+G.hire.name.slice(1).toLowerCase()+' nods once, orders a drink, and is done with you amicably.');
+        narrate(hireName(G.hire)+' nods once, orders a drink, and is done with you amicably.');
         G.hire=null;closeDialog()}]
-      :['A BLADE FOR THE ROAD — <span class="cost">175g</span>','',()=>hireBlade(),P.gold<175],
+      :['WHO IS DRINKING TONIGHT','',()=>openRoster(n)],
       word,
       ['ABOUT THE HELD DOOR','',()=>dlgSet('The name? In the sickness year the wayposts burned their gates. Ours held its door instead, and held it shut, and held it open after. The door is the whole story.',[['GO','',()=>dlgRoot(n)]])],
       ['GO','',closeDialog]]);
@@ -9157,7 +9236,7 @@ function save(){
         name:P.name,gender:P.gender,bg:P.bg,look:P.look,motive:P.motive},
       quests:G.quests,shopStock:G.shopStock,tracked:G.tracked,packDrop:G.packDrop,
       mule:G.mule?{x:G.mule.x,y:G.mule.y,inv:G.mule.inv}:null,
-      hire:(G.hire&&!G.hire.dead)?{name:G.hire.name,hp:G.hire.hp,maxhp:G.hire.maxhp}:null,
+      hire:(G.hire&&!G.hire.dead)?{id:G.hire.id,kind:G.hire.kind,name:G.hire.name,hp:G.hire.hp,maxhp:G.hire.maxhp}:null,
       revealed:[...G.revealed],removed:[...G.removed],flags:G.flags,deeds:G.deeds}));
   }catch(e){}
 }
