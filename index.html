@@ -753,6 +753,8 @@ const DPOOLS={ // what the dark keeps, per door
  mere:[['ooze',.3],['slime',.25],['rat',.2],['cube',.1],['goblin',.15]],
  drowned:[['shade',.3],['ooze',.25],['slime',.2],['cube',.15],['rat',.1]],
  stormb:[['wight',.3],['skeleton',.3],['ghul',.25],['zombie',.15]],
+ crater:[['rust',.35],['cube',.2],['shade',.2],['ooze',.15],['skeleton',.1]],
+ bloom:[['mold',.3],['slime',.25],['adder',.2],['ooze',.15],['goblin',.1]],
 };
 const SKIN_YIELD={ // what the knife finds
  wolf:[['pelt',1],['meat',.6]],
@@ -1878,6 +1880,11 @@ function forgeDeeps(r){
     G.deeps.push({id:'stormb'+suf,base:'stormb',kind:'storm',tx:moor.tx,ty:moor.ty,
       name:'THE STORM BARROW',floors:5,style:'crypt',sealYear:60+Math.floor(hash2(5,9,G.seed)*300),
       tint:'storm',bossKind:'wight',boss:'THE THUNDER-BURIED KING',minis:['FIRST HERALD','THE CROWNKEEPER'],frags:3});
+  const wood=findLand(831,BIOME.FOREST)||findLand(831,BIOME.PLAINS);
+  if(wood&&(G.home||hash2(G.rx*7,G.ry*11,739)<.5))
+    G.deeps.push({id:'bloom'+suf,base:'bloom',kind:'bloom',tx:wood.tx,ty:wood.ty,
+      name:'THE BLOOM CAVE',floors:4,style:'cavern',sealYear:200+Math.floor(hash2(7,11,G.seed)*260),
+      tint:'bloom',bossKind:'cube',boss:'THE GREEN YEAR',minis:['SPOREMOTHER','THE ROOTED'],frags:2});
   if(G.home){
     const mt=findLand(821,BIOME.MOUNTAIN);
     if(mt)G.deeps.push({id:'bstair',base:'bstair',kind:'bottomless',tx:mt.tx,ty:mt.ty,
@@ -1886,15 +1893,30 @@ function forgeDeeps(r){
   }
   for(const dp of G.deeps)mkUnique(dp,r);
 }
+/* the sky deals a door of its own, and takes it back at dawn */
+function starCrater(){
+  const sf=G.starfall;
+  if(!sf||sf.reg!==regKey())return null;
+  const dp={id:'crater_'+regKey()+'_'+G.day,base:'crater',kind:'crater',tx:sf.tx,ty:sf.ty,
+    name:'THE STAR CRATER',floors:3,style:'cavern',sealYear:G.day,tint:'star',
+    bossKind:'rust',boss:'WHAT CAME DOWN WITH IT',minis:['THE GLOWING'],frags:0,announced:true};
+  if(!ITEMS['uq_'+dp.id])mkUnique(dp,makeRng((G.seed0||G.seed)*31+G.day*7919+13));
+  else dp.uniq='uq_'+dp.id;
+  return dp;
+}
+function allDeeps(){const a=(G.deeps||[]).slice();const c=starCrater();if(c)a.push(c);return a}
+function deepShown(dp){return dp.announced||G.flags['known_'+dp.id]}
 function fragCount(dp){let n=0;while(G.flags['frag_'+dp.id+'_'+n])n++;return n}
 function deepOpen(dp){
   if(dp.kind==='drowned')return coldSnap();
   if(dp.kind==='storm')return G.weather==='STORM';
+  if(dp.kind==='bloom'){const s2=seasonOf(G.day);return s2==='GREEN'||s2==='HARVEST'}
   return true;
 }
 function deepLockLine(dp){
   return dp.kind==='drowned'?'THE WATER KEEPS IT — COME WHEN THE ICE HOLDS'
-    :dp.kind==='storm'?'SHUT — IT OPENS UNDER STORM WEATHER':'';
+    :dp.kind==='storm'?'SHUT — IT OPENS UNDER STORM WEATHER'
+    :dp.kind==='bloom'?'ROOTS HAVE SEALED IT — IT OPENS IN THE GREEN AND THE HARVEST':'';
 }
 const FRAG_LINES={
  drowned:['“A fisherman I trusted swore the mere shows stonework when the hard cold takes it. Stairs, he said. Going down.”',
@@ -1907,6 +1929,8 @@ const FRAG_LINES={
   '“The chronicle mentions a door the founders shut and then — this is the strange part — forgot on purpose.”',
   '“A hermit came down from the peaks counting backward. He was at four thousand when they stopped listening.”',
   '“They say the mountain is hollow all the way down. They say it like a joke. Nobody laughs at it twice.”'],
+ bloom:['“There is a cave in the wood that breathes out warm air and smells of cut grass in the middle of winter. It is shut then. Of course it is.”',
+  '“My uncle went in one green summer and came out talking about a room that was growing. He would not say growing into what.”'],
 };
 /* ============ NPCs ============ */
 function mkNPC(id,name,role,home,work,pal){return{id,name,role,x:work.x*TILE,y:work.y*TILE,home,work,pal,fx:0,fy:1,speed:44,moving:false,waitT:0,phase:Math.random()*9}}
@@ -1982,7 +2006,9 @@ function mkUnique(lair,r){
    mere:{base:'spear',name:'THE KEEPER’S '+roll(['GAFF','REACH','QUESTION']),dmg:[1,6,4],mod:{agi:1}},
    drowned:{base:'spear',name:'THE UNDROWNED’S '+roll(['BREATH','ANCHOR','TITHE']),dmg:[1,8,4],mod:{end:1,agi:1}},
    stormb:{base:'mace',name:roll(['THUNDER’S','THE SKY’S','THE STORM’S'])+' '+roll(['RECEIPT','GRUDGE','SIGNATURE']),dmg:[1,8,4],mod:{mgt:1,lck:1}},
-   bstair:{base:'amuletS',name:'THE '+roll(['LAST','FIRST','UNCOUNTED'])+' STEP',mod:{end:1,mgt:1,lck:1},arm:1}}[lair.base];
+   bstair:{base:'amuletS',name:'THE '+roll(['LAST','FIRST','UNCOUNTED'])+' STEP',mod:{end:1,mgt:1,lck:1},arm:1},
+   crater:{base:'swordStar',name:'THE FALLEN’S '+roll(['EDGE','ERRAND','ARGUMENT']),dmg:[1,10,5],mod:{agi:1,lck:1}},
+   bloom:{base:'wrapH',name:'THE BLOOM’S '+roll(['KEEPING','PATIENCE','GREEN YEAR']),mod:{end:1,agi:1},arm:2}}[lair.base];
   if(!B)return;
   const src=ITEMS[B.base],id='uq_'+lair.id;
   const it={...src,name:B.name.charAt(0)+B.name.slice(1).toLowerCase(),tier:4,
@@ -3959,6 +3985,36 @@ function drawDeepMouth(c,dp,now){
       c.beginPath();c.moveTo(-4,-11);c.lineTo(0,-4);c.lineTo(3,-9);c.stroke();
       c.fillStyle='#0a0a0d';c.fillRect(-4,-6,8,8);
     }else{c.fillStyle='#20231c';c.fillRect(-4,-4,8,6)}
+  }else if(dp.kind==='bloom'){
+    const open=deepOpen(dp);
+    c.fillStyle='rgba(0,0,0,.35)';ell(c,0,4,13,4);
+    c.fillStyle='#2a2420';c.beginPath();c.ellipse(0,-3,12,9,0,Math.PI,TAU);c.fill();
+    c.strokeStyle='#1a1712';c.lineWidth=1.4;c.stroke();
+    if(open){
+      c.fillStyle='#0d120c';c.beginPath();c.ellipse(0,-2,7,6,0,Math.PI,TAU);c.fill();
+      c.strokeStyle='rgba(157,196,166,'+(0.4+Math.sin(now*.002)*.25)+')';c.lineWidth=1.2;
+      for(let i=0;i<4;i++){const a=Math.PI+i*.9;
+        c.beginPath();c.moveTo(Math.cos(a)*7,Math.sin(a)*6-2);c.lineTo(Math.cos(a)*11,Math.sin(a)*9-3);c.stroke()}
+      if(Math.random()<.04)part('firefly',x,y-8,1,{sp:8,up:10,life:1.6,sz:1.2});
+    }else{ // root and frost, braided shut
+      c.strokeStyle='#3f4a36';c.lineWidth=2;
+      for(let i=0;i<5;i++){const px=-9+i*4.5;
+        c.beginPath();c.moveTo(px,-11);c.quadraticCurveTo(px+(i%2?3:-3),-5,px,1);c.stroke()}
+      c.strokeStyle='rgba(198,214,224,.35)';c.lineWidth=1;
+      c.beginPath();c.moveTo(-10,-6);c.lineTo(10,-4);c.stroke();
+    }
+  }else if(dp.kind==='crater'){
+    c.fillStyle='rgba(0,0,0,.4)';ell(c,0,4,16,5);
+    c.fillStyle='#2b2431';ell(c,0,0,15,8);          // the thrown-up rim
+    c.strokeStyle='#1a1520';c.lineWidth=1.4;c.beginPath();c.ellipse(0,0,15,8,0,0,TAU);c.stroke();
+    c.fillStyle='#0a0810';ell(c,0,0,9,4.6);          // the hole it made
+    const gl=.45+Math.sin(now*.004)*.3;
+    c.strokeStyle='rgba(240,163,92,'+gl+')';c.lineWidth=1.2;
+    c.beginPath();c.ellipse(0,0,9,4.6,0,0,TAU);c.stroke();
+    c.fillStyle='rgba(240,163,92,'+(gl*.5)+')';ell(c,0,0,5,2.4);
+    for(let i=0;i<5;i++){const a=i*1.3+now*.0004;   // still-hot ejecta
+      c.fillStyle='rgba(217,134,63,.5)';ell(c,Math.cos(a)*17,Math.sin(a)*9,1.6,1.2)}
+    if(Math.random()<.08)part('ember',x,y-4,1,{sp:12,up:20,life:.8,sz:1.4});
   }else{ // the bottomless stair — a doorway in the high stone
     c.fillStyle='rgba(0,0,0,.4)';ell(c,0,4,10,3.5);
     c.fillStyle='#57534b';c.fillRect(-9,-22,18,26);
@@ -4258,7 +4314,7 @@ function drawWorld(now,dt){
   for(const b of BUILDINGS)ents.push({y:(b.y+b.h)*TILE-6,f:()=>drawBuilding(c,b,night)});
   ents.push({y:(BENCH.ty+1)*TILE,f:()=>drawProps(c,night)});
   for(const L of G.lairs)ents.push({y:L.ty*TILE+24,f:()=>drawLairEntrance(c,L)});
-  for(const dp of (G.deeps||[]))if(G.flags['known_'+dp.id])ents.push({y:dp.ty*TILE+24,f:()=>drawDeepMouth(c,dp,now)});
+  for(const dp of allDeeps())if(deepShown(dp))ents.push({y:dp.ty*TILE+24,f:()=>drawDeepMouth(c,dp,now)});
   for(const den of G.dens)if(den.tx>V.x0&&den.tx<V.x1&&den.ty>V.y0&&den.ty<V.y1)
     ents.push({y:den.ty*TILE+20,f:()=>drawDen(c,den)});
   for(const f of G.fields)if(f.tx>V.x0&&f.tx<V.x1&&f.ty>V.y0&&f.ty<V.y1)
@@ -4467,6 +4523,8 @@ function drawDungeon(now,dt){
     else if(f){
       c.fillStyle=((D.lair&&D.lair.tint==='ice')?['#1a2230','#1e2838','#172030']
         :(D.lair&&D.lair.tint==='storm')?['#201e2a','#252236','#1b1a26']
+        :(D.lair&&D.lair.tint==='bloom')?['#1b241c','#1f2a20','#182018']
+        :(D.lair&&D.lair.tint==='star')?['#241f2a','#2a2432','#1e1a24']
         :['#1e1c22','#232028','#1a191f'])[Math.floor(hash2(tx,ty,2)*3)];
       c.fillRect(tx*TILE,ty*TILE,TILE,TILE);
       if(hash2(tx,ty,64)<.12){c.fillStyle='rgba(0,0,0,.3)';c.fillRect(tx*TILE+hash2(tx,ty,65)*20,ty*TILE+hash2(tx,ty,66)*20,6,4)}
@@ -4526,6 +4584,10 @@ function drawDungeon(now,dt){
   }
   if(D.lair&&D.lair.tint==='storm'&&Math.random()<.03) // the old king's argument leaks
     part('spark',P.x+(Math.random()-.5)*420,P.y+(Math.random()-.5)*300,1,{sp:24,life:.3,sz:1.2});
+  if(D.lair&&D.lair.tint==='bloom'&&Math.random()<.04) // spores, going about their year
+    part('firefly',P.x+(Math.random()-.5)*400,P.y+(Math.random()-.5)*280,1,{sp:10,life:1.4,sz:1.2});
+  if(D.lair&&D.lair.tint==='star'&&Math.random()<.035) // the metal has not finished cooling
+    part('ember',P.x+(Math.random()-.5)*400,P.y+(Math.random()-.5)*280,1,{sp:14,up:10,life:.7,sz:1.3});
   // rubble
   c.fillStyle='#2e2b28';
   for(const r of D.rubble){c.save();c.translate(r.x*TILE+16,r.y*TILE+20);
@@ -4760,9 +4822,11 @@ function buildPoiMap(){
   if(G.hamlet)put(G.hamlet.tx+4,G.hamlet.ty+3,{name:G.hamlet.name,fore:'Trade, a hearth, and its own counsel.'});
   if(G.home){const cx=Math.floor((TOWN.x0+TOWN.x1)/2),cy=Math.floor((TOWN.y0+TOWN.y1)/2);
     put(cx,cy,{name:G.world.town,fore:'Home. Beds, the board, the forge, and everyone who remembers you small.'})}
-  for(const dp of (G.deeps||[]))if(G.flags['known_'+dp.id])
+  for(const dp of allDeeps())if(deepShown(dp))
     put(dp.tx,dp.ty,{name:dp.name,fore:dp.kind==='drowned'?'A stair under the lake. The water keeps it — except when the ice holds.'
       :dp.kind==='storm'?'A barrow that opens only under storm weather. It hums beforehand.'
+      :dp.kind==='bloom'?'A cave that breathes warm air and grows. Shut by frost; open in the green and the harvest.'
+      :dp.kind==='crater'?'Still cooling. Whatever rode the star down is in there, and only until dawn.'
       :'A stair with no counted bottom. The chronicle forgot it on purpose.'});
   if(G.starfall&&!G.starfall.taken&&G.starfall.reg===regKey())
     put(G.starfall.tx,G.starfall.ty,{name:'THE STAR FALL',fore:'Something crossed the sky before dawn and came down burning. Starmetal, for whoever digs first.'});
@@ -5538,7 +5602,7 @@ function nearestInteract(){
       if(G.herbs.has(k)&&!G.removed.has('h'+k))tryI((tx+dx)*TILE+16,(ty+dy)*TILE+20,'herb',k,'<b>E</b> '+(FLORA[G.herbs.get(k)]||FLORA.herb).gather);
     }
     for(const n of G.npcDefs)tryI(n.x,n.y,'npc',n,'<b>E</b> SPEAK — '+n.name);
-    for(const dp of (G.deeps||[]))if(G.flags['known_'+dp.id])
+    for(const dp of allDeeps())if(deepShown(dp))
       tryI(dp.tx*TILE+16,dp.ty*TILE+16,'deep',dp,'<b>E</b> '+dp.name+(deepOpen(dp)?' — GO DOWN':' — '+deepLockLine(dp)));
     for(const L of G.lairs)tryI(L.tx*TILE+16,L.ty*TILE+16,'lair',L,'<b>E</b> '+(G.flags['open_'+L.id]?'GO DOWN — ':'')+L.name);
     tryI(BENCH.tx*TILE+14,BENCH.ty*TILE+6,'bench',null,'<b>E</b> WOODWORKING BENCH');
@@ -5650,9 +5714,12 @@ function interact(){
     const dp=it.data;
     if(!deepOpen(dp)){
       narrate(dp.kind==='drowned'?'Open water over the stair. The lake keeps its dead and its door — come back when the ice holds a walker.'
+        :dp.kind==='bloom'?'The mouth is grown shut — root and frost, braided. It opens when the year is green, and not before.'
         :'The barrow is shut stone. It opens under storm weather, and the sky is being difficult about it.');
       Snd.uiLow();return;
     }
+    if(dp.kind==='crater'&&!G.flags['open_'+dp.id])
+      narrate('The crater is still ticking as it cools. Something came down inside it, and it did not come down empty.');
     if(!G.flags['open_'+dp.id]){G.flags['open_'+dp.id]=1;gainXp(20);
       deed('Went down '+dp.name.toLowerCase()+', day '+G.day+'.')}
     enterDungeon(dp,0);
@@ -7935,7 +8002,7 @@ function giveRumor(n){
   const key='rumor_'+n.id+'_'+G.day;
   if(G.flags[key]){dlgSet('Nothing new since this morning. Come back when the road has brought somebody in.',[['GO','',closeDialog]]);return}
   /* threads of the hidden deeps come first, when there are any left to pull */
-  const dcands=(G.deeps||[]).filter(dp=>!G.flags['known_'+dp.id]
+  const dcands=(G.deeps||[]).filter(dp=>!G.flags['known_'+dp.id]&&dp.frags>0
     &&!(dp.kind==='bottomless'&&G.player.level<4)&&fragCount(dp)<dp.frags);
   if(dcands.length&&Math.random()<.45){
     const dp=dcands[Math.floor(Math.random()*dcands.length)];
@@ -7951,6 +8018,7 @@ function giveRumor(n){
       setTimeout(()=>ceremony('OUT OF RUMOUR · A DOOR FOUND',dp.name,
         (dp.kind==='drowned'?'Three threads, one knot: there are stairs under the lake, and the ice is the only bridge. Deep winter holds the door open. Dress for both.'
         :dp.kind==='storm'?'Three threads, one knot: the barrow opens under storm weather, and only then. Watch the sky. It owes the old king an argument, and you a door.'
+        :dp.kind==='bloom'?'Two threads, one knot: a cave in the wood that breathes warm and grows all year, and is only open to walk when the year itself is green. Come in the green or the harvest. Frost braids it shut.'
         :'The threads agree on one impossible thing: the stair has no counted bottom. It is on your map now. The map is not reassured.')
         +'<br><br><span class="mono" style="font-size:12px;color:var(--violet-on-dark)">MARKED ON YOUR MAP — HEX '+hx+','+hy+'</span>',
         [['THE REACH GREW A ROOM','primary',()=>closeCeremony()]]),700);
@@ -8987,7 +9055,9 @@ function updateTime(dt){
       if(dev==='starfall'&&G.mode!=='dungeon'){
         for(let i=0;i<300;i++){
           const tx=20+Math.floor(hash2(i,83,G.day)*(W-40)),ty=20+Math.floor(hash2(i,84,G.day)*(H-40));
-          if(passable(tx,ty)&&biomeAt(tx,ty)!==BIOME.WATER){G.starfall={tx,ty,reg:regKey(),taken:false};break}}
+          if(passable(tx,ty)&&biomeAt(tx,ty)!==BIOME.WATER){G.starfall={tx,ty,reg:regKey(),taken:false};
+            setTimeout(()=>toast('THE SKY DEALT A DOOR','THE STAR CRATER','Something came down burning, and it did not come down empty. The crater is open until dawn — after that the ground closes over it and keeps what is left.'),8000);
+            break}}
       }else if(dev!=='starfall')G.starfall=null;
     }else G.starfall=null;
     if(G.mode==='world')gainSkill('weathersense',2);
