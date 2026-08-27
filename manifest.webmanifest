@@ -1,0 +1,16 @@
+{
+  "name": "One More Dungeon",
+  "short_name": "One More Dungeon",
+  "description": "A seed becomes a frontier — timber, ore, five hundred years of conflict, and things sealed under stone.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
