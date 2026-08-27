@@ -517,17 +517,17 @@ const ITEMS={
   axe:{name:'Felling Axe',data:'1d6+2 · slow · melee',type:'weapon',slot:'hand',dmg:[1,6,2],weight:4.2,val:14,flav:'Took down the leaning oak at the fork on day 9.'},
   axe2:{name:'Reinforced Axe',data:'1d6+4 · slow · melee',type:'weapon',slot:'hand',dmg:[1,6,4],weight:4.6,val:40,flav:'The new haft does not flex. The tree notices.'},
   bow:{name:'Hunting Bow',data:'1d8 · ranged · uses arrows',type:'bow',slot:'hand',dmg:[1,8,0],weight:1.8,val:18,flav:'Strung with borrowed cord. It holds.'},
-  bow2:{name:'Recurve Bow',data:'1d8+3 · ranged · uses arrows',type:'bow',slot:'hand',dmg:[1,8,3],weight:1.6,val:55,flav:'Ash-stave, waxed. It asks less of the arm.'},
+  bow2:{name:'Recurve Bow',data:'1d8+3 · ranged · uses arrows',type:'bow',slot:'hand',dmg:[1,8,3],weight:1.6,val:120,flav:'Ash-stave, waxed. It asks less of the arm.'},
   sword:{name:'Arming Sword',data:'1d8 · fast · one hand',type:'weapon',slot:'hand',dmg:[1,8,0],weight:2.6,val:30,flav:'The smith calls it honest steel. The steel says nothing.'},
   spear:{name:'Ash Spear',data:'1d6+2 · reach · one hand',type:'weapon',slot:'hand',dmg:[1,6,2],weight:2.8,val:26,flav:'Reach is a kind of armour.'},
   mace:{name:'Flanged Mace',data:'1d6+1 · fast · one hand',type:'weapon',slot:'hand',dmg:[1,6,1],weight:3,val:14,flav:'Argues with armour and usually wins.'},
-  hammer2h:{name:'Warhammer',data:'1d10+1 · two hands · needs might 12',type:'weapon',slot:'hand',dmg:[1,10,1],weight:6,val:38,flav:'A door-opener. Doors, ribs, arguments.'},
-  axe2h:{name:'Great Axe',data:'1d12 · two hands · needs might 12',type:'weapon',slot:'hand',dmg:[1,12,0],weight:6.5,val:44,flav:'The tree and the wolf get the same opinion.'},
-  sword2h:{name:'Greatsword',data:'1d10+2 · two hands · needs might 11',type:'weapon',slot:'hand',dmg:[1,10,2],weight:5.5,val:52,flav:'Too long to be polite indoors.'},
-  halberd:{name:'Halberd',data:'1d8+2 · pole-arm · two hands',type:'weapon',slot:'hand',dmg:[1,8,2],weight:5.8,val:42,flav:'A spear that learned axework.'},
-  crossbow:{name:'Latch Crossbow',data:'1d10+2 · ranged · slow crank',type:'bow',slot:'hand',dmg:[1,10,2],weight:4,drawRate:.8,val:46,flav:'Patience, mechanised.'},
+  hammer2h:{name:'Warhammer',data:'1d10+1 · two hands · needs might 12',type:'weapon',slot:'hand',dmg:[1,10,1],weight:6,val:110,flav:'A door-opener. Doors, ribs, arguments.'},
+  axe2h:{name:'Great Axe',data:'1d12 · two hands · needs might 12',type:'weapon',slot:'hand',dmg:[1,12,0],weight:6.5,val:120,flav:'The tree and the wolf get the same opinion.'},
+  sword2h:{name:'Greatsword',data:'1d10+2 · two hands · needs might 11',type:'weapon',slot:'hand',dmg:[1,10,2],weight:5.5,val:135,flav:'Too long to be polite indoors.'},
+  halberd:{name:'Halberd',data:'1d8+2 · pole-arm · two hands',type:'weapon',slot:'hand',dmg:[1,8,2],weight:5.8,val:115,flav:'A spear that learned axework.'},
+  crossbow:{name:'Latch Crossbow',data:'1d10+2 · ranged · slow crank',type:'bow',slot:'hand',dmg:[1,10,2],weight:4,drawRate:.8,val:130,flav:'Patience, mechanised.'},
   net:{name:'Weighted Net',data:'thrown · snares · recoverable',type:'shield',slot:'off',weight:1.6,val:12,flav:'The fight stands still for a breath. Use the breath.'},
-  kite:{name:'Kite Shield',data:'armour 2 · block',type:'shield',slot:'off',arm:2,weight:4.2,val:22,flav:'A wall with a handle.'},
+  kite:{name:'Kite Shield',data:'armour 2 · block',type:'shield',slot:'off',arm:2,weight:4.2,val:30,flav:'A wall with a handle.'},
   jerkin:{name:'Leather Jerkin',data:'armour 2',type:'armour',slot:'body',arm:2,weight:3,val:12,flav:'Smells of woodsmoke and the road.'},
   buckler:{name:'Ash Buckler',data:'armour 1 · block',type:'shield',slot:'off',arm:1,weight:2.4,val:10,flav:'A ring of scars around the boss.'},
   timber:{name:'Ash Timber',data:'material · 1.5 wt',type:'mat',weight:1.5,val:2,flav:'Split clean. Still smells of the wood it was.'},
@@ -569,7 +569,7 @@ const ITEMS={
   ringI:{name:'Iron Ring',data:'ring · +1 might',type:'armour',slot:'ring',arm:0,mod:{mgt:1},weight:.1,val:25,flav:'Heavy for its size. So are you now.'},
   ringC:{name:'Compact Ring',data:'ring · +1 luck',type:'armour',slot:'ring',arm:0,mod:{lck:1},weight:.1,val:28,flav:'The Compact dissolved. Its luck did not.'},
   amuletB:{name:'Bone Amulet',data:'amulet · +1 endurance',type:'armour',slot:'amulet',arm:0,mod:{end:1},weight:.2,val:20,flav:'Somebody else’s endurance, worn smooth.'},
-  satchel:{name:'Herbalist’s Satchel',data:'+10 carry · food and herbs weigh half',type:'tool',weight:.5,val:18,flav:'Pockets for everything that spoils or saves you.'},
+  satchel:{name:'Herbalist’s Satchel',data:'+10 carry · food and herbs weigh half',type:'tool',weight:.5,val:22,flav:'Pockets for everything that spoils or saves you.'},
   draught:{name:'Bitter Draught',data:'restores 8 vigour',type:'food',heal:8,weight:.3,val:10,flav:'Tastes like the argument it wins.'},
   tonic:{name:'Marrow Tonic',data:'restores all stamina',type:'use',weight:.3,val:8,flav:'The legs stop filing complaints.'},
   mapScrap:{name:'Map Scrap',data:'use — old survey lines',type:'use',weight:.1,val:10,flav:'Somebody walked this before you. Somebody stopped.'},
@@ -577,17 +577,17 @@ const ITEMS={
   foxPelt:{name:'Fox Pelt',data:'material · sells well',type:'mat',weight:.6,val:14,flav:'Winter red. The chandler’s eyes go soft over it.'},
   bearPelt:{name:'Bear Pelt',data:'material · sells high',type:'mat',weight:4,val:30,flav:'The argument it took is written all over it.'},
   elkAntler:{name:'Elk Antler',data:'material · sells',type:'mat',weight:1.4,val:12,flav:'Grown in one summer. Carved for three winters.'},
-  mailShirt:{name:'Mail Shirt',data:'body · armour 4 · heavy',type:'armour',slot:'body',arm:4,weight:8,val:60,flav:'A thousand small arguments, all on your side.'},
+  mailShirt:{name:'Mail Shirt',data:'body · armour 4 · heavy',type:'armour',slot:'body',arm:4,weight:8,val:165,flav:'A thousand small arguments, all on your side.'},
   wrapH:{name:'Hunter’s Wrap',data:'body · armour 2 · +1 agility',type:'armour',slot:'body',arm:2,mod:{agi:1},weight:2.4,val:40,flav:'Cut for moving through brush without introducing yourself.'},
-  bearCoat:{name:'Bear Coat',data:'cloak · armour 2 · warm',type:'armour',slot:'cloak',arm:2,weight:4.5,val:55,flav:'The bear’s side of the argument, worn as a conclusion.'},
+  bearCoat:{name:'Bear Coat',data:'cloak · armour 2 · warm',type:'armour',slot:'cloak',arm:2,weight:4.5,val:120,flav:'The bear’s side of the argument, worn as a conclusion.'},
   /* the ground’s pharmacy */
   mushroomB:{name:'Blackcap',data:'mushroom · eat for 3 vigour · brews',type:'food',heal:3,weight:.15,val:4,flav:'Grows where the light gives up first. Tastes better than that sounds.'},
   kingcap:{name:'Kingcap',data:'rare mushroom · eat for 6 vigour',type:'food',heal:6,weight:.2,val:12,flav:'One to a wood, most years. The deer leave it alone, which means something.'},
   moonbell:{name:'Moonbell',data:'frost flower · brews tonics',type:'mat',weight:.1,val:7,flav:'Blooms under snow, out of spite.'},
   wyrmgill:{name:'Wyrmgill',data:'cave mushroom · glows faintly · brews',type:'mat',weight:.15,val:9,flav:'Grows only where the sun has never argued. Glows about it.'},
   salve:{name:'Wyrmgill Salve',data:'restores 14 vigour',type:'food',heal:14,weight:.3,val:20,flav:'Smells of deep stone. Works like shallow sleep.'},
-  packL:{name:'Traveller’s Pack',data:'+12 carry while worn',type:'tool',slot:'pack',weight:1.2,val:35,flav:'Room for the things you told yourself you would not pick up.'},
-  packG:{name:'Journeyman’s Frame',data:'+20 carry while worn',type:'tool',slot:'pack',weight:2,val:85,flav:'Ash frame, oiled straps. The road weighs the same. You notice it less.'},
+  packL:{name:'Traveller’s Pack',data:'+12 carry while worn',type:'tool',slot:'pack',weight:1.2,val:80,flav:'Room for the things you told yourself you would not pick up.'},
+  packG:{name:'Journeyman’s Frame',data:'+20 carry while worn',type:'tool',slot:'pack',weight:2,val:220,flav:'Ash frame, oiled straps. The road weighs the same. You notice it less.'},
   /* what the mountain keeps, by worth */
   oreC:{name:'Copper Ore',data:'material · smelts',type:'mat',weight:1.8,val:3,flav:'Dark orange in the seam. The first metal anyone ever argued over.'},
   oreS:{name:'Silver Ore',data:'material · smelts · uncommon',type:'mat',weight:2,val:12,flav:'Pale in the stone. Wolves are said to mind it. Wolves say nothing.'},
@@ -598,9 +598,9 @@ const ITEMS={
   ingotG:{name:'Gold Bar',data:'material · forge-worked · heavy',type:'mat',weight:1.8,val:70,flav:'Every war in the chronicle was about a shelf of these somewhere.'},
   gemC:{name:'Cut Gem',data:'material · jewelry work',type:'mat',weight:.2,val:75,flav:'The cloud came off under the wheel. What is left argues with the light.'},
   ringCu:{name:'Copper Band',data:'ring · +1 wits',type:'armour',slot:'ring',arm:0,mod:{wit:1},weight:.1,val:20,flav:'Copper keeps the mind ticking over. So say the people selling copper.'},
-  ringS:{name:'Silver Ring',data:'ring · +1 luck',type:'armour',slot:'ring',arm:0,mod:{lck:1},weight:.1,val:55,flav:'Luck likes silver. Nobody has asked why in centuries.'},
+  ringS:{name:'Silver Ring',data:'ring · +1 luck',type:'armour',slot:'ring',arm:0,mod:{lck:1},weight:.1,val:95,flav:'Luck likes silver. Nobody has asked why in centuries.'},
   amuletS:{name:'Silver Amulet',data:'amulet · +1 endurance · +1 wits',type:'armour',slot:'amulet',arm:0,mod:{end:1,wit:1},weight:.2,val:80,flav:'Cool against the chest on hot roads, warm on cold ones.'},
-  amuletG:{name:'Gilded Amulet',data:'amulet · +1 luck · +1 wits',type:'armour',slot:'amulet',arm:0,mod:{lck:1,wit:1},weight:.3,val:160,flav:'Gold and a cut stone. The Reach will treat you differently. That is the point.'},
+  amuletG:{name:'Gilded Amulet',data:'amulet · +1 luck · +1 wits',type:'armour',slot:'amulet',arm:0,mod:{lck:1,wit:1},weight:.3,val:320,flav:'Gold and a cut stone. The Reach will treat you differently. That is the point.'},
   /* every animal wears its own coat */
   boarHide:{name:'Bristled Boar Hide',data:'material · coarse leather · sells',type:'mat',weight:1.2,val:8,flav:'Stiff as an opinion. Wears like one too.'},
   goatHide:{name:'Goat Hide',data:'material · light leather · sells',type:'mat',weight:.8,val:5,flav:'Thin, tough, and smells faintly of the high stone.'},
@@ -615,8 +615,8 @@ const ITEMS={
   sabrePelt:{name:'Sabrecat Pelt',data:'material · sells high',type:'mat',weight:2.4,val:34,flav:'The warden will not believe you. The pelt insists.'},
   sabreFang:{name:'Sabre Fang',data:'trophy · sells high',type:'mat',weight:.5,val:40,flav:'Longer than your hand. It was pointed at you an hour ago.'},
   venomSac:{name:'Venom Sac',data:'material · handle with respect · sells',type:'mat',weight:.2,val:12,flav:'Sealed and sloshing. The chandler pays and does not ask.'},
-  jerkinB:{name:'Bristleback Jerkin',data:'body · armour 3',type:'armour',slot:'body',arm:3,weight:3.5,val:30,flav:'Boar bristle turned outward. Arguments glance off.'},
-  cloakA:{name:'Aurochs Mantle',data:'cloak · armour 2 · +1 might',type:'armour',slot:'cloak',arm:2,mod:{mgt:1},weight:4,val:60,flav:'The weight of the animal, redistributed in your favour.'},
+  jerkinB:{name:'Bristleback Jerkin',data:'body · armour 3',type:'armour',slot:'body',arm:3,weight:3.5,val:70,flav:'Boar bristle turned outward. Arguments glance off.'},
+  cloakA:{name:'Aurochs Mantle',data:'cloak · armour 2 · +1 might',type:'armour',slot:'cloak',arm:2,mod:{mgt:1},weight:4,val:130,flav:'The weight of the animal, redistributed in your favour.'},
   starmetal:{name:'Starmetal',data:'fallen iron · forge-worked · rare',type:'mat',weight:1.6,val:60,flav:'It fell far enough to stop being ordinary. Cold to the touch, always.'},
   swordStar:{name:'Starmetal Blade',data:'1d10+3 · fast · one hand',type:'weapon',slot:'hand',dmg:[1,10,3],weight:2.4,val:220,flav:'Forged from a night the whole Reach saw. It hums when drawn, faintly, like an apology.'},
   /* the trades' own iron — no tool, no trade */
@@ -6814,8 +6814,8 @@ function updateArrows(dt){
 function hireBlade(){
   const P=G.player;
   if(G.hire&&!G.hire.dead){narrate('One blade is company. Two is a payroll.');return}
-  if(P.gold<60){narrate('Sixty coins hires steel. You have '+P.gold+'.');return}
-  P.gold-=60;
+  if(P.gold<175){narrate('A hundred and seventy-five hires steel for the season. You have '+P.gold+'.');return}
+  P.gold-=175;
   const nm=GQ_NAMES[Math.floor(Math.random()*GQ_NAMES.length)];
   G.hire={name:nm,x:P.x-30,y:P.y+16,hp:26,maxhp:26,fx:1,fy:0,phase:0,moving:false,atkT:0,hurtT:0,dead:false};
   closeDialog();Snd.coin();
@@ -8021,9 +8021,9 @@ function bgOpt(n){
 }
 function muleOpt(n){
   if(G.mule||(n.id!=='dougal'&&n.id!=='farstead'))return [];
-  return [['THE MULE OUT BACK — <span class="cost">140g</span>','',()=>{
-    dlgSet(n.id==='dougal'?'Sullen thing, strong back, eats less than it argues. Carries ninety weight, follows anywhere with sky over it, and waits outside the dark places with more sense than most.':'The mule came with a trade and stayed out of spite. Ninety weight on its back and it follows like a debt. 140, and its opinions come free.',
-      [['BUY THE MULE — 140g','primary',()=>{buyMule(140);closeDialog()},G.player.gold<140],
+  return [['THE MULE OUT BACK — <span class="cost">380g</span>','',()=>{
+    dlgSet(n.id==='dougal'?'Sullen thing, strong back, eats less than it argues. Carries ninety weight, follows anywhere with sky over it, and waits outside the dark places with more sense than most.':'The mule came with a trade and stayed out of spite. Ninety weight on its back and it follows like a debt. Three hundred and eighty, and its opinions come free.',
+      [['BUY THE MULE — 380g','primary',()=>{buyMule(380);closeDialog()},G.player.gold<380],
        ['NOT TODAY','',()=>dlgRoot(n)]]);
   }]];
 }
@@ -8081,7 +8081,7 @@ function dlgRoot(n){
       (G.hire&&!G.hire.dead)?['PART WAYS WITH '+G.hire.name,'',()=>{
         narrate(G.hire.name.charAt(0)+G.hire.name.slice(1).toLowerCase()+' nods once, orders a drink, and is done with you amicably.');
         G.hire=null;closeDialog()}]
-      :['A BLADE FOR THE ROAD — <span class="cost">60g</span>','',()=>hireBlade(),P.gold<60],
+      :['A BLADE FOR THE ROAD — <span class="cost">175g</span>','',()=>hireBlade(),P.gold<175],
       word,
       ['ABOUT THE HELD DOOR','',()=>dlgSet('The name? In the sickness year the wayposts burned their gates. Ours held its door instead, and held it shut, and held it open after. The door is the whole story.',[['GO','',()=>dlgRoot(n)]])],
       ['GO','',closeDialog]]);
