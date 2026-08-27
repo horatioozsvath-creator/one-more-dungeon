@@ -53,16 +53,16 @@ input[type=range]{accent-color:var(--ember);width:170px;cursor:pointer}
 #hud-target{position:absolute;top:290px;right:22px;text-align:right;opacity:0;transition:opacity 200ms}
 #hud-target.on{opacity:1}
 #hud-target .tname{font-size:15px;color:var(--bone);font-weight:300;margin:4px 0 6px}
-#narration{position:absolute;bottom:160px;left:22px;font-family:var(--font-mono);font-size:14px;color:var(--text-quiet);white-space:nowrap;opacity:0;transition:opacity 350ms;text-align:left;background:rgba(8,8,10,.65);padding:6px 12px;border-radius:10px;max-width:calc(100vw - 44px);overflow:hidden;text-overflow:ellipsis}
+#narration{position:absolute;bottom:186px;left:22px;font-family:var(--font-mono);font-size:14px;color:var(--text-quiet);white-space:nowrap;opacity:0;transition:opacity 350ms;text-align:left;background:rgba(8,8,10,.65);padding:6px 12px;border-radius:10px;max-width:calc(100vw - 44px);overflow:hidden;text-overflow:ellipsis}
 #narration.on{opacity:1}
-#hotbar{position:absolute;bottom:78px;left:22px;display:flex;gap:10px;pointer-events:auto}
+#hotbar{position:absolute;bottom:104px;left:22px;display:flex;gap:10px;pointer-events:auto}
 .hot{width:72px;height:72px;background:rgba(18,18,22,.82);border:1px solid var(--hairline-strong);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;cursor:pointer;transition:border-color 200ms;-webkit-user-select:none;user-select:none}
 .hot .k{font-family:var(--font-mono);font-size:11px;color:var(--text-label);position:absolute;top:5px;left:7px}
 .hot .n{font-family:var(--font-mono);font-size:13px;color:var(--bone);letter-spacing:.04em}
 .hot .c{font-family:var(--font-mono);font-size:11px;color:var(--gold)}
 .hot.active{border-color:var(--ember)}
 .hot.dim{opacity:.38}
-#prompt{position:absolute;bottom:168px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;color:var(--bone);background:rgba(8,8,10,.75);border:1px solid var(--hairline-strong);border-radius:10px;padding:9px 16px;opacity:0;transition:opacity 200ms;white-space:nowrap}
+#prompt{position:absolute;bottom:194px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;color:var(--bone);background:rgba(8,8,10,.75);border:1px solid var(--hairline-strong);border-radius:10px;padding:9px 16px;opacity:0;transition:opacity 200ms;white-space:nowrap}
 #prompt.on{opacity:1}
 #prompt b{color:var(--ember);font-weight:500}
 #hud-keys{position:absolute;bottom:30px;left:22px;font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;color:var(--text-label);line-height:2}
@@ -2428,7 +2428,7 @@ function spawnWildlife(){
 /* ============ player ============ */
 function mkPlayer(){
   const P={x:(TOWN.x0+14)*TILE,y:(TOWN.y1-6)*TILE, vx:0,vy:0,fx:0,fy:1,moving:false,running:false,
-    hp:18,maxhp:18,st:10,maxst:10, gold:20, capBonus:0,
+    hp:18,maxhp:18,st:10,maxst:10, gold:20, capBonus:0, age0:AGE_START,agePlus:0,falls:0,
     ammo:{std:12,barb:0,fire:0}, arrowType:'std',
     inv:[{id:'bow'},{id:'meal'},{id:'meal'}],
     eq:{hand:'axe',off:null,helm:null,body:'jerkin',cloak:null,gloves:null,boots:null,socks:'socksW',ring:null,ring2:null,ring3:null,amulet:null},
@@ -2509,10 +2509,26 @@ function applyLoadout(i){
   narrate('Loadout '+['I','II','III','IV'][i]+'. '+(P.eq.hand?ITEMS[P.eq.hand].name:'Empty hands')+(P.eq.off?' and '+ITEMS[P.eq.off].name.toLowerCase():'')+'.');
 }
 /* an average human is 10 in everything; you get to stop being average */
+/* ============ the years, and what they take ============ */
+const AGE_START=22, AGE_RETIRE=60;
+const AGE_BANDS=[
+ {at:0, name:'IN YOUR PRIME',  mod:{},                     line:'Everything answers on the first ask.'},
+ {at:30,name:'THIRTY YEARS ON',mod:{agi:-1,wit:1},         line:'A step slower off the mark. You have stopped needing the step.'},
+ {at:40,name:'FORTY YEARS ON', mod:{mgt:-1,agi:-2,wit:2},  line:'The arms argue in the cold. The judgement does not.'},
+ {at:50,name:'FIFTY YEARS ON', mod:{mgt:-2,agi:-3,end:-1,wit:3,lck:1},
+  line:'Slow, and worth listening to. The Reach has run out of ways to surprise you.'},
+];
+function playerAge(){const P=G.player;if(!P)return AGE_START;
+  return (P.age0===undefined?AGE_START:P.age0)+(yearOf(G.day)-1)+(P.agePlus||0)}
+function ageBand(){const a=playerAge();let b=AGE_BANDS[0];
+  for(const x of AGE_BANDS)if(a>=x.at)b=x;return b}
+function ageMod(k){const m=ageBand().mod;return m[k]||0}
+function yearsToRetire(){return Math.max(0,AGE_RETIRE-playerAge())}
 function statOf(k){
   const P=G.player;let v=(P.stats&&P.stats[k])||10;
   for(const s of activeSlots()){const id=P.eq[s];if(id&&ITEMS[id].mod&&ITEMS[id].mod[k])v+=ITEMS[id].mod[k]}
-  return v;
+  v+=ageMod(k); // the years take some things and hand back others
+  return Math.max(1,v);
 }
 function statBonus(k){return statOf(k)-10}
 /* what this country grows tired of, and what it wants badly */
@@ -6518,10 +6534,20 @@ function hurtPlayer(dmg,from){
 function die(){
   G.over=true;G.mode='ceremony';Snd.hurt();
   const P=G.player;
+  const lost=1+Math.floor(Math.random()*3); // one, two, three years in a bed
+  P.pendingYears=lost;
+  const was=playerAge(),will=was+lost;
+  P.falls=(P.falls||0)+1;
+  const line=lost===1?'A year of it. You do not remember most of the year.'
+    :lost===2?'Two years of it. The second one you remember, and would rather not.'
+    :'Three years of it. Somebody kept you fed. You never learned who.';
   ceremony('DAY '+G.day+' · '+(G.dungeon?G.dungeon.lair.name:G.world.region),
-    'The Reach keeps the body.',
-    'The map and the hands that learned are yours still. Half the coin stays where you fell.',
-    [['TAKE UP THE MAP AGAIN','primary',()=>{respawn()}]]);
+    'The Reach keeps the body — for a while.',
+    'They carried what was left of you back and it took '+line
+    +'<br><br>The map and the hands that learned are yours still. Half the coin stays where you fell.'
+    +'<br><br><span class="mono" style="font-size:12px;letter-spacing:.12em;color:var(--wound)">'
+    +was+' YEARS OLD · YOU WAKE AT '+will+(will>=AGE_RETIRE?' · THAT IS THE END OF THE WALKING':'')+'</span>',
+    [[will>=AGE_RETIRE?'WAKE, AND BE DONE':'WAKE UP','primary',()=>{respawn()}]]);
 }
 function respawn(){
   const P=G.player;G.wisp=null;
@@ -6532,12 +6558,17 @@ function respawn(){
     forgeWorld(ss);unstashRegion();applyLairGen();
     chunks.clear();G.dstates={};mmCacheT=0;
   }
+  const lost=P.pendingYears||1;P.pendingYears=0;
+  G.day+=lost*36; // the years turn without you in them; playerAge reads the calendar
+  deed('Fell on day '+G.day+'. Lost '+lost+' year'+(lost===1?'':'s')+' to the mending.');
+  recalcStats();
   P.hp=P.maxhp;P.st=P.maxst;P.gold=Math.floor(P.gold/2);
   P.x=(TOWN.x0+14)*TILE;P.y=(TOWN.y1-6)*TILE;
   G.cam.x=P.x;G.cam.y=P.y;
   G.dungeon=null;G.dungeonId=null;G.over=false;
   G.day++;G.time=7/24*DAYLEN+G.day*0; spawnWildlife();
   closeCeremony();G.mode='world';
+  if(playerAge()>=AGE_RETIRE){setTimeout(()=>retire('woke'),600);return}
   narrate('You wake at the waypost. The map remembers what you paid for.');
   deed('Was carried back to the waypost. Kept the map.');
 }
@@ -7106,16 +7137,20 @@ function renderChar(){
   const bgDef=BACKGROUNDS.find(b=>b.id===P.bg);
   const bgName=bgDef?bgDef.name:'RANGER';
   $('cs-name').textContent=P.name?P.name+', '+bgName:'THE '+bgName+', UNNAMED';
-  $('cs-fact').textContent=G.day+' DAYS ALIVE · LEVEL '+P.level+' '+professionTitle()+' · '+P.xp+' / '+XPNEED(P.level)+' XP · '+P.tp+' TALENT'+(P.tp===1?'':'S');
+  $('cs-fact').textContent='AGE '+playerAge()+' · '+G.day+' DAYS ALIVE · LEVEL '+P.level+' '+professionTitle()+' · '+P.xp+' / '+XPNEED(P.level)+' XP · '+P.tp+' TALENT'+(P.tp===1?'':'S');
   const how=$('cs-how');if(how)how.textContent='HOW '+({he:'HE',she:'SHE',they:'THEY'}[P.gender]||'THEY')+' GOT HERE';
   $('cs-state').textContent=G.world.region;
   const STATS=[['mgt','Might','+2 carry per point · heavy arms need it · +1 damage per 2 over 10'],['agi','Agility','+1.5% speed, +2% accuracy, +1.8% dodge per point over 10'],['end','Endurance','+1 vigour and stamina per point · faster healing and breath'],['wit','Wits','2% better prices per point over 10, both directions'],['lck','Luck','+8% to every loot roll per point over 10']];
   const pts=P.statPts||0;
-  $('cs-attrs').innerHTML=(pts>0?`<div class="label-tag" style="color:var(--gold);margin-bottom:6px">${pts} STAT POINT${pts===1?'':'S'} TO SPEND · 10 IS AN AVERAGE HUMAN</div>`:'')
+  const band=ageBand(),ag=playerAge(),left=yearsToRetire();
+  const agRow=`<div class="datarow" data-tip="${band.line}"><span class="name">Years</span>
+    <span class="val mono" style="color:${ag>=50?'var(--wound)':ag>=40?'var(--gold)':'var(--text-quiet)'}">${ag} · ${band.name}</span></div>
+    <div class="label-tag" style="margin:2px 0 10px;color:${left<=5?'var(--wound)':'var(--text-label)'}">${left>0?left+' YEAR'+(left===1?'':'S')+' OF WALKING LEFT — RETIREMENT AT '+AGE_RETIRE:'THE WALKING IS DONE'}${Object.keys(band.mod).length?' · '+Object.entries(band.mod).map(([k,v])=>(v>0?'+':'')+v+' '+statLabel(k).toUpperCase()).join(' · '):''}</div>`;
+  $('cs-attrs').innerHTML=agRow+(pts>0?`<div class="label-tag" style="color:var(--gold);margin-bottom:6px">${pts} STAT POINT${pts===1?'':'S'} TO SPEND · 10 IS AN AVERAGE HUMAN</div>`:'')
    +STATS.map(([k,nm,tip])=>{
-    const base=P.stats[k],eff=statOf(k),gear=eff-base;
+    const base=P.stats[k],eff=statOf(k),am=ageMod(k),gear=eff-base-am;
     return `<div class="datarow" data-tip="${tip}"><span class="name">${nm}</span>
-      <span class="val mono">${base}${gear?' <span style="color:var(--gold)">+'+gear+'</span>':''}
+      <span class="val mono">${base}${gear?' <span style="color:var(--gold)">+'+gear+'</span>':''}${am?' <span style="color:'+(am>0?'var(--camp)':'var(--wound)')+'">'+(am>0?'+':'')+am+'</span>':''}
       ${pts>0?`<button class="mono" data-st="${k}" style="margin-left:8px;width:20px;height:20px;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-size:14px;cursor:pointer">+</button>`:''}</span></div>`}).join('')
    +arithmeticRows();
   $('cs-attrs').querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{if(spendStat(b.dataset.st))renderChar()});
@@ -8397,14 +8432,33 @@ function startCapture(a,padMode){
   addEventListener('mousedown',capHandlers.m,true);
   addEventListener('wheel',capHandlers.w,{capture:true,passive:false});
 }
+/* a pad button, drawn as the pad draws it */
+function padPill(btn){
+  if(!btn||btn==='lb2')return '';
+  const face={a:'#6bbf59',b:'#d1594f',x:'#5b8fd6',y:'#e0b23f'}[btn];
+  const nm=(PADNAME[btn]||btn).replace(' (CLICK)','');
+  if(face)return '<span style="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;'
+    +'border-radius:50%;background:'+face+';color:#0e0e10;font-size:10px;font-weight:700;vertical-align:middle">'+btn.toUpperCase()+'</span>';
+  return '<span style="display:inline-block;padding:1px 6px;border:1px solid var(--hairline-strong);border-radius:5px;'
+    +'font-size:10px;letter-spacing:.06em;color:var(--text-quiet);vertical-align:middle">'+nm+'</span>';
+}
+/* which pad action answers the same job as this key binding */
+const PAD_FOR_BIND={up:'L-STICK',down:'L-STICK',left:'L-STICK',right:'L-STICK'};
+function padForAction(a){
+  if(PAD_FOR_BIND[a])return '<span style="display:inline-block;padding:1px 6px;border:1px solid var(--hairline-strong);border-radius:5px;font-size:10px;letter-spacing:.06em;color:var(--text-quiet);vertical-align:middle">L-STICK</span>';
+  if(typeof padOf!=='function')return '';
+  const has=PADMETA.some(([pa])=>pa===a);
+  return has?padPill(padOf(a)):'';
+}
 function renderControls(){
   $('ctl-list').innerHTML=BINDMETA.map(([a,label])=>{
-    const cap=capAction===a;
+    const cap=capAction===a&&!capPad;
     const code=bindOf(a),changed=SET.binds[a]&&SET.binds[a]!==DEFBINDS[a];
+    const pad=padForAction(a);
     return `<div class="datarow" data-ctl="${a}" style="cursor:pointer;${cap?'background:var(--fill-white);margin:0 -10px;padding:9px 10px':''}">
       <span class="name">${label}</span>
       <span class="val mono" style="color:${cap?'var(--ember)':changed?'var(--gold)':'var(--text-quiet)'}">
-        ${cap?'PRESS A KEY · CLICK · SCROLL — ESC CANCELS':prettyBind(code)}</span></div>`}).join('');
+        ${cap?'PRESS A KEY · CLICK · SCROLL — ESC CANCELS':prettyBind(code)+(pad?'<span style="color:var(--text-locked)"> / </span>'+pad:'')}</span></div>`}).join('');
   $('ctl-list').querySelectorAll('[data-ctl]').forEach(el=>el.onclick=e=>{
     if(capAction)return; // capture in progress owns the mouse
     startCapture(el.dataset.ctl)});
@@ -8416,10 +8470,11 @@ function renderControls(){
     pl.innerHTML=PADMETA.map(([a,label])=>{
       const cap=capAction===a&&capPad;
       const btn=padOf(a),changed=SET.pad&&SET.pad[a]&&SET.pad[a]!==DEFPAD[a];
+      const key=DEFBINDS[a]!==undefined?prettyBind(bindOf(a)):(a==='block'?'SPACE':'');
       return `<div class="datarow" data-pad="${a}" style="cursor:pointer;${cap?'background:var(--fill-white);margin:0 -10px;padding:9px 10px':''}">
         <span class="name">${label}</span>
         <span class="val mono" style="color:${cap?'var(--ember)':changed?'var(--gold)':'var(--text-quiet)'}">
-          ${cap?'PRESS A BUTTON ON THE PAD':(PADNAME[btn]||'—')}</span></div>`}).join('');
+          ${cap?'PRESS A BUTTON ON THE PAD':(key?'<span style="color:var(--text-locked)">'+key+' / </span>':'')+padPill(btn)}</span></div>`}).join('');
     pl.querySelectorAll('[data-pad]').forEach(el=>el.onclick=()=>{
       if(capAction)return;
       if(!PAD.on){narrate('No pad is awake. Press a button on it first.');return}
@@ -8432,14 +8487,16 @@ function renderControls(){
 function renderKeysLegend(){
   const p2=prettyBind;
   const el=$('hud-keys');if(!el)return;
-  el.textContent=[p2(bindOf('up'))+p2(bindOf('left'))+p2(bindOf('down'))+p2(bindOf('right'))+' MOVE',
-    p2(bindOf('run'))+' RUN',p2(bindOf('interact'))+' ACT',p2(bindOf('loadout'))+' SWAP ARMS',
-    p2(bindOf('spell'))+' SPELL',p2(bindOf('zoomin'))+'/'+p2(bindOf('zoomout'))+' ZOOM'].join(' · ')
+  const pd=(a,fb)=>PAD.on?'/'+((PADNAME[padOf(a)]||fb).replace(' (CLICK)','')):'';
+  el.textContent=[p2(bindOf('up'))+p2(bindOf('left'))+p2(bindOf('down'))+p2(bindOf('right'))+(PAD.on?'/L-STICK':'')+' MOVE',
+    p2(bindOf('run'))+pd('run','LB')+' RUN',p2(bindOf('interact'))+pd('interact','A')+' ACT',
+    p2(bindOf('loadout'))+pd('loadout','X')+' SWAP ARMS',
+    p2(bindOf('spell'))+pd('spell','Y')+' SPELL',p2(bindOf('zoomin'))+'/'+p2(bindOf('zoomout'))+' ZOOM'].join(' · ')
    +'\n'+[p2(bindOf('character'))+' SELF',p2(bindOf('skills'))+' SKILLS',p2(bindOf('map'))+' MAP',
-    p2(bindOf('pack'))+' PACK',p2(bindOf('mule'))+' MULE',p2(bindOf('quests'))+' QUESTS',p2(bindOf('bestiary'))+' BEASTS',
+    p2(bindOf('pack'))+pd('pack','MENU')+' PACK',p2(bindOf('mule'))+' MULE',p2(bindOf('quests'))+' QUESTS',
+    p2(bindOf('bestiary'))+' BEASTS',
     p2(bindOf('build'))+' BUILD',p2(bindOf('droppack'))+' DROP PACK','ESC HOLD'].join(' · ')
-   +(PAD.on?'\nPAD · L-STICK MOVE · R-STICK AIM · '+PADNAME[padOf('attack')]+' SWING · '+PADNAME[padOf('interact')]+' ACT · '
-     +PADNAME[padOf('run')]+' RUN · '+PADNAME[padOf('block')]+' BLOCK · '+PADNAME[padOf('pack')]+' PACK':'');
+   +(PAD.on?'\nPAD · R-STICK AIM · '+PADNAME[padOf('attack')]+' SWING · '+PADNAME[padOf('block')]+' BLOCK':'');
   el.style.whiteSpace='pre-line';
 }
 /* ============ the bestiary — a book written by looking ============ */
@@ -8484,6 +8541,60 @@ function renderBestiary(){
     c.restore();
   });
 }
+/* ============ the end of the walking ============ */
+function retire(how){
+  const P=G.player;
+  if(G.retired)return;
+  G.retired=true;G.over=true;G.mode='ceremony';
+  const a=playerAge(),F=G.flags;
+  const cleared=Object.keys(F).filter(k=>k.indexOf('everclear_')===0).length;
+  const relics=Object.keys(F).filter(k=>k.indexOf('uq_')===0).length;
+  const kinds=Object.keys(F).filter(k=>k.indexOf('k_')===0).length;
+  const mastered=Object.entries(P.skills).filter(([id,s2])=>s2.lv>=MAXLV).length;
+  const regions=Object.keys(G.regions||{}).length+1;
+  const falls=P.falls||0;
+  const pro=professionTitle();
+  /* the chronicle keeps the ones who stopped walking */
+  try{
+    const key='omd-chronicle';
+    const roll=JSON.parse(localStorage.getItem(key)||'[]');
+    roll.unshift({name:P.name||'UNNAMED',pro,age:a,day:G.day,level:P.level,seed:G.world.seedStr,
+      cleared,relics,how,deeds:(G.deeds||[]).slice(-3)});
+    localStorage.setItem(key,JSON.stringify(roll.slice(0,12)));
+  }catch(e){}
+  Snd.learn();setTimeout(()=>Snd.learn(),400);
+  const row=(n,v)=>'<div class="datarow"><span class="name quiet">'+n+'</span><span class="val mono">'+v+'</span></div>';
+  ceremony('THE LAST PAGE · YEAR '+yearOf(G.day)+' · AGE '+a,
+    (P.name||'THE ONE WITH NO NAME GIVEN')+' STOPS WALKING',
+    (how==='woke'
+      ?'You wake in a bed in '+G.world.town.toLowerCase()+' and the arms do not answer. They will not answer again — not for this work. '+a+' years is where the walking ends, and the Reach has had all of them.'
+      :a+' years. The road does not throw you out; it simply stops asking. You put the pack down in '+G.world.town.toLowerCase()+' and nobody argues, which is how you know.')
+    +'<br><br><span style="font-style:italic;color:var(--text-quiet)">The board still has work on it. It always will. Somebody else can have the walking.</span>'
+    +'<div style="max-width:420px;margin:18px auto 0;text-align:left">'
+    +row('Called',pro)+row('Days under the sky',G.day)+row('Countries walked',regions)
+    +row('Kinds brought down',kinds+' · '+P.kills+' in all')
+    +row('Sealed places first-cleared',cleared)+row('Relics brought up',relics)
+    +row('Trades mastered',mastered)+row('Times carried home',falls)
+    +(F.bstairDeep?row('Down the Bottomless Stair','floor −'+F.bstairDeep):'')
+    +'</div>',
+    [['READ THE WHOLE SAGA','',()=>{closeCeremony();G.mode='screen';toggleScreen('scr-saga')}],
+     ['LET SOMEBODY ELSE WALK IT','primary',()=>{closeCeremony();beginAgain()}]]);
+}
+/* the world keeps going; the next one inherits the chronicle */
+function beginAgain(){
+  const ss=G.world.seedStr;
+  const roll=(()=>{try{return JSON.parse(localStorage.getItem('omd-chronicle')||'[]')}catch(e){return[]}})();
+  try{localStorage.removeItem(saveKey())}catch(e){}
+  G.retired=false;G.over=false;
+  document.querySelectorAll('.screen.on').forEach(x=>x.classList.remove('on'));
+  $('hud').classList.remove('on');
+  $('title').classList.add('on');G.mode='title';
+  Music.force('intro');
+  if(typeof renderTitleSave==='function')renderTitleSave();
+  const prev=roll[0];
+  setTimeout(()=>{if(prev)toast('THE CHRONICLE KEEPS THEM',prev.name+', '+prev.pro,
+    'Stopped walking at '+prev.age+', on day '+prev.day+'. The seed is still '+String(prev.seed).toUpperCase()+' if you want to walk the same ground after them.')},900);
+}
 /* ============ the saga — what the chronicle will keep ============ */
 function sagaLine(txt,cls){return '<div class="chron-line on '+(cls||'')+'" style="font-size:14px;line-height:1.7">'+txt+'</div>'}
 function renderSaga(){
@@ -8520,6 +8631,8 @@ function renderSaga(){
     +label('THE DEEDS, AS KEPT')
     +(G.deeds.length?G.deeds.map(d2=>sagaLine(d2)).join(''):sagaLine('Nothing set down yet. The stone is patient.','dim'))
     +label('THE RECKONING')
+    +numRow('Years on the body',playerAge()+' · '+ageBand().name.toLowerCase())
+    +numRow('Times carried home',P.falls||0)
     +numRow('Days under the sky',G.day)
     +numRow('Countries walked',regions)
     +numRow('Beasts and worse, observed',kindsSeen+' kinds')
@@ -8915,7 +9028,7 @@ function renderTitleSave(){
     cards.push(`<div data-slot="${n}" style="cursor:pointer;width:152px;padding:10px 8px;border:1px solid ${sel?'var(--ember)':'var(--hairline-strong)'};border-radius:4px;background:rgba(11,11,12,.6)">
       <div class="mono" style="font-size:9px;letter-spacing:.14em;color:${sel?'var(--ember)':'var(--text-label)'}">SLOT ${n}${sel?' · CHOSEN':''}</div>
       ${s2?`<div class="mono" style="font-size:11.5px;letter-spacing:.1em;color:var(--bone);margin-top:6px">${s2.player.name||'UNNAMED'}</div>
-      <div class="mono" style="font-size:9.5px;color:var(--text-quiet);margin-top:3px">LV ${s2.player.level||1} · DAY ${s2.day}</div>
+      <div class="mono" style="font-size:9.5px;color:var(--text-quiet);margin-top:3px">LV ${s2.player.level||1} · DAY ${s2.day}${s2.player.age0!==undefined?' · AGE '+((s2.player.age0)+(Math.floor((s2.day-1)/36))+(s2.player.agePlus||0)):''}</div>
       <div class="mono" style="font-size:9px;color:var(--text-label);margin-top:2px">${String(s2.seedStr).toUpperCase().slice(0,16)}${s2.flags&&s2.flags.bstairDeep?' · STAIR −'+s2.flags.bstairDeep:''}</div>`
       :`<div class="mono" style="font-size:10px;color:var(--text-locked);margin-top:12px;padding-bottom:10px">EMPTY GROUND</div>`}
     </div>`);
@@ -9105,6 +9218,17 @@ function updateHUD(){
 function updateTime(dt){
   G.time+=dt;
   if(G.time>=DAYLEN){G.time-=DAYLEN;G.day++;
+    if(G.player&&yearOf(G.day)!==yearOf(G.day-1)){ // one more year on the body
+      const bWas=ageBand();recalcStats();
+      const bNow=ageBand();
+      const a=playerAge();
+      setTimeout(()=>{
+        if(bNow!==bWas)toast('A YEAR OLDER · '+a,bNow.name,bNow.line);
+        else if(a>=AGE_RETIRE-3&&a<AGE_RETIRE)toast('A YEAR OLDER · '+a,'THE LAST SEASONS',
+          (AGE_RETIRE-a)+' year'+(AGE_RETIRE-a===1?'':'s')+' of walking left in you. Spend them on something the chronicle will argue about.');
+      },1200);
+      if(a>=AGE_RETIRE){setTimeout(()=>retire('time'),2600)}
+    }
     if(seasonOf(G.day)!==seasonOf(G.day-1)){ // the year turns a page
       const S2=SEASONS[seasonOf(G.day)];
       setTimeout(()=>toast('THE YEAR TURNS · YEAR '+yearOf(G.day),S2.name,S2.line),1400);
@@ -9233,7 +9357,8 @@ function save(){
         ammo:P.ammo,arrowType:P.arrowType,loadouts:P.loadouts,loIdx:P.loIdx,
         inv:P.inv,eq:P.eq,hot:P.hot,skills:P.skills,kills:P.kills,level:P.level,xp:P.xp,tp:P.tp,meleeId:P.meleeId,
         stats:P.stats,statPts:P.statPts,ench:P.ench,spellSel:P.spellSel,
-        name:P.name,gender:P.gender,bg:P.bg,look:P.look,motive:P.motive},
+        name:P.name,gender:P.gender,bg:P.bg,look:P.look,motive:P.motive,
+        age0:P.age0,agePlus:P.agePlus,falls:P.falls},
       quests:G.quests,shopStock:G.shopStock,tracked:G.tracked,packDrop:G.packDrop,
       mule:G.mule?{x:G.mule.x,y:G.mule.y,inv:G.mule.inv}:null,
       hire:(G.hire&&!G.hire.dead)?{id:G.hire.id,kind:G.hire.kind,name:G.hire.name,hp:G.hire.hp,maxhp:G.hire.maxhp}:null,
@@ -9290,6 +9415,10 @@ function load(){
     if(!G.player.look)G.player.look={skin:1,coat:0,hood:0,cloak:0};
     if(!G.player.gender)G.player.gender='they';
     if(G.player.motive===undefined)G.player.motive=null;
+    if(G.player.age0===undefined)G.player.age0=AGE_START;
+    if(G.player.agePlus===undefined)G.player.agePlus=0;
+    if(G.player.falls===undefined)G.player.falls=0;
+    G.retired=false;
     // the trades grew tool requirements — old hands keep their old tools
     const bgTool={woodsman:'adze',hunter:'knife',miner:'pick',peddler:'knife'}[G.player.bg];
     if(bgTool&&!G.player.inv.some(i=>i.id===bgTool))G.player.inv.push({id:bgTool});
