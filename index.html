@@ -845,6 +845,13 @@ function genQuests(){
     }
     out.push(q);
   }
+  /* work already taken keeps its posting, even after the board is re-nailed */
+  for(const id in (G.quests||{})){
+    const st=G.quests[id];
+    if(!st||!st.def||st.state==='paid')continue;
+    if(out.some(x=>x.id===id))continue;
+    out.push({...st.def,held:true});
+  }
   return out;
 }
 function questDefs(){
@@ -7270,7 +7277,7 @@ function renderBoard(){
   for(const sec of ['YOUR ROAD','THE CHRONICLE','FRESH POSTINGS','DELIVERIES','THE HUNT','EXPEDITIONS','FAVOURS']){
     const inSec=QS.filter(q=>qSection(q)===sec);
     if(!inSec.length)continue;
-    html+=`<div class="label-tag" style="margin:16px 0 4px">${sec}${sec==='THE CHRONICLE'?' — WHAT FIVE HUNDRED YEARS LEFT UNDONE':sec==='FRESH POSTINGS'?' — RE-NAILED EVERY WEEK, DAY '+((Math.floor((G.day-1)/7)+1)*7+1):''}</div>`;
+    html+=`<div class="label-tag" style="margin:16px 0 4px">${sec}${sec==='THE CHRONICLE'?' — WHAT FIVE HUNDRED YEARS LEFT UNDONE':sec==='FRESH POSTINGS'?' — RE-NAILED EVERY WEEK, DAY '+((Math.floor((G.day-1)/7)+1)*7+1)+' · WORK YOU HAVE TAKEN KEEPS ITS PLACE':''}</div>`;
     html+=inSec.map(q=>{
       const st=qState(q),p=qProgress(q),tracked=G.tracked===q.id;
       const col=st==='READY'?'var(--camp)':st==='ACTIVE'?'var(--gold)':st==='PAID'?'var(--text-locked)':'var(--text-quiet)';
@@ -7303,7 +7310,8 @@ function renderBoard(){
     ${(st==='ACTIVE'||st==='READY')?`<button class="btn ${G.tracked===q.id?'outline':''}" id="bd-track" style="width:100%;margin-top:8px">${G.tracked===q.id?'STOP TRACKING':'TRACK THIS — IT RIDES YOUR HUD'}</button>`:''}`;
   $('bd-go').onclick=()=>{
     if(q.npc)return;
-    if(st==='OPEN'){G.quests[q.id]={state:'active',s0:q.need[0]==='kill'?killCount(q.need[1]):0};
+    if(st==='OPEN'){G.quests[q.id]={state:'active',s0:q.need[0]==='kill'?killCount(q.need[1]):0,
+        def:q.gen?{id:q.id,gen:true,who:q.who,need:q.need,name:q.name,reward:q.reward,desc:q.desc,lore:q.lore}:undefined};
       if(!G.tracked)G.tracked=q.id;
       Snd.ui();narrate('Taken. The board does not care who finishes it, only that it finishes.');renderBoard()}
     else if(st==='READY'){
