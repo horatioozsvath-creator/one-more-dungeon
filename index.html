@@ -329,9 +329,13 @@ input[type=range]{accent-color:var(--ember);width:170px;cursor:pointer}
   <button class="scr-close" data-close>ESC — BACK</button>
   <div class="scr-body" style="overflow-y:auto;justify-content:center">
     <div style="width:680px;max-width:calc(100vw - 44px);padding:20px 0 60px">
+      <div class="label-tag" style="margin-bottom:6px">KEYBOARD &amp; MOUSE</div>
       <div id="ctl-list"></div>
+      <div class="label-tag" style="margin:26px 0 4px;display:flex;justify-content:space-between">
+        <span>THE PAD — XBOX &amp; COMPATIBLE</span><span id="ctl-padstate" style="color:var(--text-locked)">NONE CONNECTED</span></div>
+      <div id="ctl-padlist"></div>
       <button class="btn" id="ctl-reset" style="width:100%;margin-top:18px">EVERYTHING BACK TO DEFAULT</button>
-      <div class="label-tag" style="margin-top:12px">HOTBAR 1–7, ESC, SPACE AND 0 KEEP THEIR JOBS. EXTRA MOUSE BUTTONS AND THE WHEEL ALL BIND.</div>
+      <div class="label-tag" style="margin-top:12px">HOTBAR 1–7, ESC, SPACE AND 0 KEEP THEIR JOBS. EXTRA MOUSE BUTTONS AND THE WHEEL ALL BIND. LEFT STICK WALKS, RIGHT STICK AIMS.</div>
     </div>
   </div>
 </div>
@@ -5050,6 +5054,98 @@ addEventListener('wheel',e=>{
   }
 },{passive:false});
 
+
+/* ============ the pad — a controller is just another pair of hands ============ */
+const PADBTN=['a','b','x','y','lb','rb','lt','rt','back','start','ls','rs','dup','ddown','dleft','dright','guide'];
+const PADNAME={a:'A',b:'B',x:'X',y:'Y',lb:'LB',rb:'RB',lt:'LT',rt:'RT',back:'VIEW',start:'MENU',
+ ls:'LS (CLICK)',rs:'RS (CLICK)',dup:'D-PAD UP',ddown:'D-PAD DOWN',dleft:'D-PAD LEFT',dright:'D-PAD RIGHT',guide:'GUIDE'};
+/* what each button does, out of the box — remappable like everything else */
+const DEFPAD={attack:'rt',interact:'a',run:'lb',block:'lt',loadout:'x',spell:'y',
+ pack:'start',character:'back',map:'dup',quests:'ddown',skills:'dleft',bestiary:'dright',
+ mule:'ls',build:'rs',droppack:'b',zoomin:'rb',zoomout:'lb2'};
+const PADMETA=[['attack','SWING · DRAW — HOLD'],['interact','ACT · TALK · GATHER'],['run','RUN — HOLD'],
+ ['block','BLOCK — HOLD'],['loadout','SWAP ARMS'],['spell','CYCLE SPELL'],['droppack','DROP THE PACK'],
+ ['pack','PACK SCREEN'],['character','CHARACTER'],['skills','SKILL WEB'],['map','THE MAP'],
+ ['quests','THE LEDGER'],['bestiary','THE BESTIARY'],['mule','THE MULE'],['build','MAKE CAMP'],
+ ['zoomin','ZOOM IN']];
+function padOf(a){return (SET.pad&&SET.pad[a])||DEFPAD[a]}
+function padActionOf(btn){for(const a in DEFPAD)if(padOf(a)===btn)return a;return null}
+const PAD={on:false,prev:{},aimx:1,aimy:0,aiming:false,name:''};
+function padPoll(){
+  const pads=navigator.getGamepads?navigator.getGamepads():[];
+  let gp=null;
+  for(const p of pads)if(p&&p.connected){gp=p;break}
+  if(!gp){if(PAD.on){PAD.on=false;PAD.aiming=false;PAD.prev={}}return}
+  if(!PAD.on){PAD.on=true;PAD.name=gp.id;
+    if(typeof renderKeysLegend==='function')renderKeysLegend();}
+  const B=gp.buttons,A=gp.axes;
+  const hit=i=>!!(B[i]&&(B[i].pressed||B[i].value>.5));
+  /* the standard mapping every xbox pad reports */
+  const now={a:hit(0),b:hit(1),x:hit(2),y:hit(3),lb:hit(4),rb:hit(5),lt:hit(6),rt:hit(7),
+    back:hit(8),start:hit(9),ls:hit(10),rs:hit(11),dup:hit(12),ddown:hit(13),dleft:hit(14),dright:hit(15),guide:hit(16)};
+  const dead=v=>Math.abs(v)<.22?0:v;
+  const lx=dead(A[0]||0),ly=dead(A[1]||0),rx=dead(A[2]||0),ry=dead(A[3]||0);
+  /* the capture screen eats the pad whole */
+  if(capAction&&(G.screenOpen==='scr-controls')){
+    for(const k of PADBTN)if(now[k]&&!PAD.prev[k]){assignPad(k);break}
+    PAD.prev=now;return;
+  }
+  const playing=(G.mode==='world'||G.mode==='dungeon')&&!G.dlg;
+  /* left stick walks, right stick aims — the mouse keeps its job when the sticks rest */
+  if(playing){
+    keys[bindOf('left')]=lx<-.22;keys[bindOf('right')]=lx>.22;
+    keys[bindOf('up')]=ly<-.22;keys[bindOf('down')]=ly>.22;
+    if(rx||ry){const l=Math.hypot(rx,ry)||1;PAD.aimx=rx/l;PAD.aimy=ry/l;PAD.aiming=true}
+    else if((lx||ly)&&!PAD.aiming){const l=Math.hypot(lx,ly)||1;PAD.aimx=lx/l;PAD.aimy=ly/l}
+  }else{ // hands off the keyboard when a screen is up
+    keys[bindOf('left')]=keys[bindOf('right')]=keys[bindOf('up')]=keys[bindOf('down')]=false;
+  }
+  const held=a=>{const b=padOf(a);return b==='lb2'?false:!!now[b]};
+  const tapped=a=>{const b=padOf(a);return b!=='lb2'&&!!now[b]&&!PAD.prev[b]};
+  if(playing){
+    keys[bindOf('run')]=held('run');
+    /* the trigger swings and draws, exactly as the mouse does */
+    if(held('attack'))mouseDown=true;
+    else if(mouseDown&&PAD.prev[padOf('attack')]){
+      if(G.player&&G.player.anim.draw>.25)looseArrow();
+      mouseDown=false;
+    }
+    keys[' ']=held('block'); // the shield answers the left trigger
+    for(const [a] of PADMETA){
+      if(a==='attack'||a==='run'||a==='block')continue;
+      if(tapped(a))performAction(a);
+    }
+    /* the bumpers walk the zoom stops and the hotbar */
+    if(tapped('zoomin'))setZoom(G.zoomStop+1);
+    if(now.rb&&!PAD.prev.rb&&padOf('zoomin')!=='rb')setZoom(G.zoomStop+1);
+  }else{
+    keys[bindOf('run')]=false;keys[' ']=false;mouseDown=false;
+    /* menus: A confirms, B backs out, sticks and d-pad still reach the screens */
+    if(now.a&&!PAD.prev.a){
+      const b=document.querySelector('#cer-acts .btn.primary')||document.querySelector('#cer-acts .btn')
+        ||document.querySelector('#dlg-opts .btn:not([disabled])');
+      if(b)b.click();
+    }
+    if(now.b&&!PAD.prev.b){
+      if(G.dlg)closeDialog();
+      else if(G.mode==='screen')closeScreens();
+      else if(G.mode==='pause')closePause();
+    }
+    if(now.start&&!PAD.prev.start){
+      if(G.mode==='pause')closePause();
+      else if(G.mode==='screen')closeScreens();
+    }
+  }
+  PAD.prev=now;
+}
+function assignPad(btn){
+  const other=padActionOf(btn);
+  if(!SET.pad)SET.pad={};
+  if(other&&other!==capAction)SET.pad[other]=padOf(capAction); // the two trade places
+  SET.pad[capAction]=btn;
+  saveSettings();Snd.ui();
+  stopCapture();renderControls();renderKeysLegend();
+}
 /* ============ zoom ============ */
 function setZoom(stop){
   const s=clamp(stop,0,4);
@@ -5062,9 +5158,9 @@ function renderZoom(){
 }
 
 /* ============ pause / settings ============ */
-const SET={snd:true,shake:true,binds:{},musicVol:1,sfxVol:1};
+const SET={snd:true,shake:true,binds:{},pad:{},musicVol:1,sfxVol:1};
 function loadSettings(){
-  try{const s=JSON.parse(localStorage.getItem('omd-set'));if(s){SET.snd=!!s.snd;SET.shake=!!s.shake;SET.binds=s.binds||{};
+  try{const s=JSON.parse(localStorage.getItem('omd-set'));if(s){SET.snd=!!s.snd;SET.shake=!!s.shake;SET.binds=s.binds||{};SET.pad=s.pad||{};
     SET.musicVol=s.musicVol===undefined?1:s.musicVol;SET.sfxVol=s.sfxVol===undefined?1:s.sfxVol}}catch(e){}
   Snd.on=SET.snd;G.shakeOn=SET.shake;
   const t=$('t-snd');if(t)t.textContent=SET.snd?'ON':'OFF';
@@ -6327,8 +6423,9 @@ function respawn(){
 function updatePlayer(dt,now){
   const P=G.player;
   // aim
-  P.aimx=mouseX-VW/2;P.aimy=mouseY-VH/2+14;
-  const al=Math.hypot(P.aimx,P.aimy)||1;P.aimx/=al;P.aimy/=al;
+  if(PAD.on&&PAD.aiming){P.aimx=PAD.aimx;P.aimy=PAD.aimy}
+  else{P.aimx=mouseX-VW/2;P.aimy=mouseY-VH/2+14;
+    const al=Math.hypot(P.aimx,P.aimy)||1;P.aimx/=al;P.aimy/=al;}
   // move
   let mx=(down('right')||keys.arrowright?1:0)-(down('left')||keys.arrowleft?1:0);
   let my=(down('down')||keys.arrowdown?1:0)-(down('up')||keys.arrowup?1:0);
@@ -8093,7 +8190,7 @@ function playerPal(){
 function hasBackShield(){const P=G.player;return P.eq.off&&ITEMS[P.eq.off].type==='shield'&&baseId(P.eq.off)!=='net'}
 
 /* ============ controls — remap the hands ============ */
-let capAction=null,capHandlers=null;
+let capAction=null,capHandlers=null,capPad=false;
 function openControls(){
   $('pause').classList.remove('on');
   closeScreens();closeDialog();
@@ -8105,7 +8202,7 @@ function stopCapture(){
   if(capHandlers){removeEventListener('keydown',capHandlers.k,true);
     removeEventListener('mousedown',capHandlers.m,true);
     removeEventListener('wheel',capHandlers.w,true)}
-  capHandlers=null;capAction=null;
+  capHandlers=null;capAction=null;capPad=false;
 }
 function assignBind(code){
   const FIXED=['0','1','2','3','4','5','6','7','escape'];
@@ -8116,8 +8213,9 @@ function assignBind(code){
   saveSettings();Snd.ui();
   stopCapture();renderControls();renderKeysLegend();
 }
-function startCapture(a){
-  stopCapture();capAction=a;renderControls();
+function startCapture(a,padMode){
+  stopCapture();capAction=a;capPad=!!padMode;renderControls();
+  if(padMode)return; // the pad is polled, not listened for
   capHandlers={
     k:e=>{e.preventDefault();e.stopPropagation();
       if(e.key==='Escape'){stopCapture();renderControls();return}
@@ -8140,8 +8238,25 @@ function renderControls(){
   $('ctl-list').querySelectorAll('[data-ctl]').forEach(el=>el.onclick=e=>{
     if(capAction)return; // capture in progress owns the mouse
     startCapture(el.dataset.ctl)});
+  const ps=$('ctl-padstate');
+  if(ps){ps.textContent=PAD.on?(PAD.name||'PAD').toUpperCase().slice(0,42):'NONE CONNECTED — PRESS A BUTTON TO WAKE IT';
+    ps.style.color=PAD.on?'var(--camp)':'var(--text-locked)'}
+  const pl=$('ctl-padlist');
+  if(pl){
+    pl.innerHTML=PADMETA.map(([a,label])=>{
+      const cap=capAction===a&&capPad;
+      const btn=padOf(a),changed=SET.pad&&SET.pad[a]&&SET.pad[a]!==DEFPAD[a];
+      return `<div class="datarow" data-pad="${a}" style="cursor:pointer;${cap?'background:var(--fill-white);margin:0 -10px;padding:9px 10px':''}">
+        <span class="name">${label}</span>
+        <span class="val mono" style="color:${cap?'var(--ember)':changed?'var(--gold)':'var(--text-quiet)'}">
+          ${cap?'PRESS A BUTTON ON THE PAD':(PADNAME[btn]||'—')}</span></div>`}).join('');
+    pl.querySelectorAll('[data-pad]').forEach(el=>el.onclick=()=>{
+      if(capAction)return;
+      if(!PAD.on){narrate('No pad is awake. Press a button on it first.');return}
+      startCapture(el.dataset.pad,true)});
+  }
   const rb=$('ctl-reset');
-  if(rb)rb.onclick=()=>{SET.binds={};saveSettings();stopCapture();Snd.uiLow();renderControls();renderKeysLegend()};
+  if(rb)rb.onclick=()=>{SET.binds={};SET.pad={};saveSettings();stopCapture();Snd.uiLow();renderControls();renderKeysLegend()};
 }
 /* the legend keeps up with the hands */
 function renderKeysLegend(){
@@ -8152,7 +8267,9 @@ function renderKeysLegend(){
     p2(bindOf('spell'))+' SPELL',p2(bindOf('zoomin'))+'/'+p2(bindOf('zoomout'))+' ZOOM'].join(' · ')
    +'\n'+[p2(bindOf('character'))+' SELF',p2(bindOf('skills'))+' SKILLS',p2(bindOf('map'))+' MAP',
     p2(bindOf('pack'))+' PACK',p2(bindOf('mule'))+' MULE',p2(bindOf('quests'))+' QUESTS',p2(bindOf('bestiary'))+' BEASTS',
-    p2(bindOf('build'))+' BUILD',p2(bindOf('droppack'))+' DROP PACK','ESC HOLD'].join(' · ');
+    p2(bindOf('build'))+' BUILD',p2(bindOf('droppack'))+' DROP PACK','ESC HOLD'].join(' · ')
+   +(PAD.on?'\nPAD · L-STICK MOVE · R-STICK AIM · '+PADNAME[padOf('attack')]+' SWING · '+PADNAME[padOf('interact')]+' ACT · '
+     +PADNAME[padOf('run')]+' RUN · '+PADNAME[padOf('block')]+' BLOCK · '+PADNAME[padOf('pack')]+' PACK':'');
   el.style.whiteSpace='pre-line';
 }
 /* ============ the bestiary — a book written by looking ============ */
@@ -9049,6 +9166,7 @@ let last=0;
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.05,(now-last)/1000||.016);last=now;
+  padPoll(); // the pad speaks first; everything downstream just reads keys
   if(G.mode==='title'||G.mode==='genesis'||G.mode==='create')return;
   if(G.mode==='ceremony'||G.mode==='pause'){updateHUD();return}
   const playing=(G.mode==='world'||G.mode==='dungeon')&&!G.dlg; // any open screen or conversation holds the world still
