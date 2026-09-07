@@ -1,4 +1,4 @@
-/* One More Dungeon — network-first, cache as the road home.
+/* Darkclay — network-first, cache as the road home.
    Online: always fetch the newest build. Offline: serve the last one cached. */
 const CACHE='omd';
 self.addEventListener('install',e=>self.skipWaiting());
